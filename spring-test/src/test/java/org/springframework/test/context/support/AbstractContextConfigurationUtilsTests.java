@@ -255,7 +255,7 @@ abstract class AbstractContextConfigurationUtilsTests {
 
 	@ContextHierarchy({ //
 		@ContextConfiguration(classes = FooConfig.class, loader = AnnotationConfigContextLoader.class, name = "foo"), //
-		@ContextConfiguration(classes = BarConfig.class, loader = AnnotationConfigContextLoader.class)//
+		@ContextConfiguration(classes = BarConfig.class, loader = AnnotationConfigContextLoader.class, name = "bar")//
 	})
 	@NestedTestConfiguration(EnclosingConfiguration.INHERIT)
 	static class ContextHierarchyOuterTestCase {
@@ -263,11 +263,11 @@ abstract class AbstractContextConfigurationUtilsTests {
 		class NestedTestCaseWithInheritedConfig {
 		}
 
-		@ContextConfiguration(classes = BazConfig.class)
+		@ContextConfiguration(classes = BazConfig.class, loader = AnnotationConfigContextLoader.class, name = "bar")
 		class NestedTestCaseWithMergedInheritedConfig {
 		}
 
-		@ContextConfiguration(classes = QuuxConfig.class, loader = AnnotationConfigContextLoader.class, name = "foo")
+		@ContextConfiguration(classes = QuuxConfig.class, loader = AnnotationConfigContextLoader.class, name = "foo", inheritLocations = false)
 		class NestedTestCaseWithOverriddenConfig {
 		}
 

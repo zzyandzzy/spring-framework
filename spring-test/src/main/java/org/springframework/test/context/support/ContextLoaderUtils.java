@@ -38,6 +38,7 @@ import org.springframework.test.context.NestedTestConfiguration.EnclosingConfigu
 import org.springframework.test.context.SmartContextLoader;
 import org.springframework.test.util.MetaAnnotationUtils.UntypedAnnotationDescriptor;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
@@ -153,8 +154,16 @@ abstract class ContextLoaderUtils {
 			}
 
 			hierarchyAttributes.add(0, configAttributesList);
+
+			// Declared on a superclass?
 			desc = findAnnotationDescriptorForTypes(
 					rootDeclaringClass.getSuperclass(), contextConfigType, contextHierarchyType);
+
+			// Declared on an enclosing class of an inner class?
+			if (desc == null && ClassUtils.isInnerClass(rootDeclaringClass)) {
+				desc = findAnnotationDescriptorForTypes(
+						rootDeclaringClass.getDeclaringClass(), contextConfigType, contextHierarchyType);
+			}
 		}
 
 		return hierarchyAttributes;

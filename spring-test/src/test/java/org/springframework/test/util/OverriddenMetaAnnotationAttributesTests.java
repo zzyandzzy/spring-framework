@@ -43,6 +43,7 @@ class OverriddenMetaAnnotationAttributesTests {
 	@Test
 	void contextConfigurationValue() throws Exception {
 		Class<MetaValueConfigTestCase> declaringClass = MetaValueConfigTestCase.class;
+		@SuppressWarnings("deprecation")
 		AnnotationDescriptor<ContextConfiguration> descriptor = findAnnotationDescriptor(declaringClass,
 			ContextConfiguration.class);
 		assertThat(descriptor).isNotNull();
@@ -59,6 +60,7 @@ class OverriddenMetaAnnotationAttributesTests {
 	@Test
 	void overriddenContextConfigurationValue() throws Exception {
 		Class<?> declaringClass = OverriddenMetaValueConfigTestCase.class;
+		@SuppressWarnings("deprecation")
 		AnnotationDescriptor<ContextConfiguration> descriptor = findAnnotationDescriptor(declaringClass,
 			ContextConfiguration.class);
 		assertThat(descriptor).isNotNull();
@@ -83,6 +85,7 @@ class OverriddenMetaAnnotationAttributesTests {
 	@Test
 	void contextConfigurationLocationsAndInheritLocations() throws Exception {
 		Class<MetaLocationsConfigTestCase> declaringClass = MetaLocationsConfigTestCase.class;
+		@SuppressWarnings("deprecation")
 		AnnotationDescriptor<ContextConfiguration> descriptor = findAnnotationDescriptor(declaringClass,
 			ContextConfiguration.class);
 		assertThat(descriptor).isNotNull();
@@ -100,6 +103,7 @@ class OverriddenMetaAnnotationAttributesTests {
 	@Test
 	void overriddenContextConfigurationLocationsAndInheritLocations() throws Exception {
 		Class<?> declaringClass = OverriddenMetaLocationsConfigTestCase.class;
+		@SuppressWarnings("deprecation")
 		AnnotationDescriptor<ContextConfiguration> descriptor = findAnnotationDescriptor(declaringClass,
 			ContextConfiguration.class);
 		assertThat(descriptor).isNotNull();

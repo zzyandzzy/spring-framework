@@ -31,6 +31,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeanInstantiationException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
+import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
 import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.lang.Nullable;
 import org.springframework.test.context.BootstrapContext;
@@ -114,9 +115,10 @@ public abstract class AbstractTestContextBootstrapper implements TestContextBoot
 		Class<TestExecutionListeners> annotationType = TestExecutionListeners.class;
 		List<Class<? extends TestExecutionListener>> classesList = new ArrayList<>();
 		boolean usingDefaults = false;
+		SearchStrategy searchStrategy = ContextLoaderUtils.getSearchStrategy(clazz);
 
 		AnnotationDescriptor<TestExecutionListeners> descriptor =
-				MetaAnnotationUtils.findAnnotationDescriptor(clazz, annotationType);
+				MetaAnnotationUtils.findAnnotationDescriptor(clazz, annotationType, searchStrategy);
 
 		// Use defaults?
 		if (descriptor == null) {
@@ -140,7 +142,7 @@ public abstract class AbstractTestContextBootstrapper implements TestContextBoot
 				boolean inheritListeners = testExecutionListeners.inheritListeners();
 				AnnotationDescriptor<TestExecutionListeners> superDescriptor =
 						MetaAnnotationUtils.findAnnotationDescriptor(
-								descriptor.getRootDeclaringClass().getSuperclass(), annotationType);
+								descriptor.getRootDeclaringClass().getSuperclass(), annotationType, searchStrategy);
 
 				// If there are no listeners to inherit, we might need to merge the
 				// locally declared listeners with the defaults.
@@ -258,13 +260,14 @@ public abstract class AbstractTestContextBootstrapper implements TestContextBoot
 	public final MergedContextConfiguration buildMergedContextConfiguration() {
 		Class<?> testClass = getBootstrapContext().getTestClass();
 		CacheAwareContextLoaderDelegate cacheAwareContextLoaderDelegate = getCacheAwareContextLoaderDelegate();
+		SearchStrategy searchStrategy = ContextLoaderUtils.getSearchStrategy(testClass);
 
 		if (MetaAnnotationUtils.findAnnotationDescriptorForTypes(
-				testClass, ContextConfiguration.class, ContextHierarchy.class) == null) {
+				testClass, searchStrategy, ContextConfiguration.class, ContextHierarchy.class) == null) {
 			return buildDefaultMergedContextConfiguration(testClass, cacheAwareContextLoaderDelegate);
 		}
 
-		if (MetaAnnotationUtils.findAnnotationDescriptor(testClass, ContextHierarchy.class) != null) {
+		if (MetaAnnotationUtils.findAnnotationDescriptor(testClass, ContextHierarchy.class, searchStrategy) != null) {
 			Map<String, List<ContextConfigurationAttributes>> hierarchyMap =
 					ContextLoaderUtils.buildContextHierarchyMap(testClass);
 			MergedContextConfiguration parentConfig = null;

@@ -74,7 +74,8 @@ abstract class ActiveProfilesUtils {
 
 		Class<ActiveProfiles> annotationType = ActiveProfiles.class;
 		AnnotationDescriptor<ActiveProfiles> descriptor =
-				MetaAnnotationUtils.findAnnotationDescriptor(testClass, annotationType);
+				MetaAnnotationUtils.findAnnotationDescriptor(testClass, annotationType,
+					ContextLoaderUtils.getSearchStrategy(testClass));
 		if (descriptor == null && logger.isDebugEnabled()) {
 			logger.debug(String.format(
 					"Could not find an 'annotation declaring class' for annotation type [%s] and class [%s]",
@@ -113,7 +114,7 @@ abstract class ActiveProfilesUtils {
 			}
 
 			descriptor = (annotation.inheritProfiles() ? MetaAnnotationUtils.findAnnotationDescriptor(
-					rootDeclaringClass.getSuperclass(), annotationType) : null);
+					rootDeclaringClass.getSuperclass(), annotationType, ContextLoaderUtils.getSearchStrategy(rootDeclaringClass)) : null);
 		}
 
 		// Reverse the list so that we can traverse "down" the hierarchy.

@@ -106,9 +106,10 @@ abstract class ContextLoaderUtils {
 		Class<ContextConfiguration> contextConfigType = ContextConfiguration.class;
 		Class<ContextHierarchy> contextHierarchyType = ContextHierarchy.class;
 		List<List<ContextConfigurationAttributes>> hierarchyAttributes = new ArrayList<>();
+		SearchStrategy searchStrategy = ContextLoaderUtils.getSearchStrategy(testClass);
 
 		UntypedAnnotationDescriptor desc =
-				findAnnotationDescriptorForTypes(testClass, contextConfigType, contextHierarchyType);
+				findAnnotationDescriptorForTypes(testClass, searchStrategy, contextConfigType, contextHierarchyType);
 		Assert.notNull(desc, () -> String.format(
 					"Could not find an 'annotation declaring class' for annotation type [%s] or [%s] and test class [%s]",
 					contextConfigType.getName(), contextHierarchyType.getName(), testClass.getName()));
@@ -155,14 +156,16 @@ abstract class ContextLoaderUtils {
 
 			hierarchyAttributes.add(0, configAttributesList);
 
+			searchStrategy = ContextLoaderUtils.getSearchStrategy(rootDeclaringClass);
+
 			// Declared on a superclass?
 			desc = findAnnotationDescriptorForTypes(
-					rootDeclaringClass.getSuperclass(), contextConfigType, contextHierarchyType);
+					rootDeclaringClass.getSuperclass(), searchStrategy, contextConfigType, contextHierarchyType);
 
 			// Declared on an enclosing class of an inner class?
 			if (desc == null && ClassUtils.isInnerClass(rootDeclaringClass)) {
 				desc = findAnnotationDescriptorForTypes(
-						rootDeclaringClass.getDeclaringClass(), contextConfigType, contextHierarchyType);
+						rootDeclaringClass.getDeclaringClass(), searchStrategy, contextConfigType, contextHierarchyType);
 			}
 		}
 
@@ -261,7 +264,10 @@ abstract class ContextLoaderUtils {
 		return attributesList;
 	}
 
-	private static SearchStrategy getSearchStrategy(Class<?> testClass) {
+	/**
+	 * @since 5.3
+	 */
+	static SearchStrategy getSearchStrategy(Class<?> testClass) {
 		EnclosingConfiguration enclosingConfiguration =
 			MergedAnnotations.from(testClass, SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES)
 				.stream(NestedTestConfiguration.class)

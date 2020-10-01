@@ -149,9 +149,8 @@ public abstract class MetaAnnotationUtils {
 			return descriptor;
 		}
 
-		SearchStrategy searchStrategy = getSearchStrategy(clazz);
 		// Declared on an enclosing class of an inner class?
-		if (searchStrategy == SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES && ClassUtils.isInnerClass(clazz)) {
+		if (searchEnclosingClass(clazz)) {
 			descriptor = findAnnotationDescriptor(clazz.getEnclosingClass(), visited, annotationType);
 			if (descriptor != null) {
 				return descriptor;
@@ -253,9 +252,8 @@ public abstract class MetaAnnotationUtils {
 			return descriptor;
 		}
 
-		SearchStrategy searchStrategy = getSearchStrategy(clazz);
 		// Declared on an enclosing class of an inner class?
-		if (searchStrategy == SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES && ClassUtils.isInnerClass(clazz)) {
+		if (searchEnclosingClass(clazz)) {
 			descriptor = findAnnotationDescriptorForTypes(clazz.getEnclosingClass(), visited, annotationTypes);
 			if (descriptor != null) {
 				return descriptor;
@@ -285,6 +283,21 @@ public abstract class MetaAnnotationUtils {
 		return (enclosingConfiguration == EnclosingConfiguration.INHERIT ?
 				SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES :
 				SearchStrategy.TYPE_HIERARCHY);
+	}
+
+	/**
+	 * Determine if annotations on the enclosing class of the supplied class
+	 * should be searched by algorithms in {@link MetaAnnotationUtils}.
+	 * @param clazz the class whose enclosing class should potentially be searched
+	 * @return {@code true} if the supplied class is an inner class whose enclosing
+	 * class should be searched
+	 * @since 5.3
+	 * @see ClassUtils#isInnerClass(Class)
+	 * @see #getSearchStrategy(Class)
+	 */
+	public static boolean searchEnclosingClass(Class<?> clazz) {
+		return (ClassUtils.isInnerClass(clazz) &&
+				getSearchStrategy(clazz) == SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES);
 	}
 
 	private static void assertNonEmptyAnnotationTypeArray(Class<?>[] annotationTypes, String message) {

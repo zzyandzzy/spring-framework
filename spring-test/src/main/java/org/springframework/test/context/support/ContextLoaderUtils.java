@@ -29,20 +29,19 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.annotation.MergedAnnotation;
 import org.springframework.core.annotation.MergedAnnotations;
-import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.ContextConfigurationAttributes;
 import org.springframework.test.context.ContextHierarchy;
 import org.springframework.test.context.SmartContextLoader;
 import org.springframework.test.util.MetaAnnotationUtils.UntypedAnnotationDescriptor;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
 import static org.springframework.core.annotation.AnnotationUtils.isAnnotationDeclaredLocally;
 import static org.springframework.test.util.MetaAnnotationUtils.findAnnotationDescriptorForTypes;
 import static org.springframework.test.util.MetaAnnotationUtils.getSearchStrategy;
+import static org.springframework.test.util.MetaAnnotationUtils.searchEnclosingClass;
 
 /**
  * Utility methods for resolving {@link ContextConfigurationAttributes} from the
@@ -159,8 +158,7 @@ abstract class ContextLoaderUtils {
 					rootDeclaringClass.getSuperclass(), contextConfigType, contextHierarchyType);
 
 			// Declared on an enclosing class of an inner class?
-			if (desc == null && ClassUtils.isInnerClass(rootDeclaringClass) &&
-					getSearchStrategy(rootDeclaringClass) == SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES) {
+			if (desc == null && searchEnclosingClass(rootDeclaringClass)) {
 				desc = findAnnotationDescriptorForTypes(
 						rootDeclaringClass.getEnclosingClass(), contextConfigType, contextHierarchyType);
 			}

@@ -29,6 +29,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.annotation.MergedAnnotation;
 import org.springframework.core.annotation.MergedAnnotations;
+import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.ContextConfigurationAttributes;
 import org.springframework.test.context.ContextHierarchy;
@@ -158,7 +159,8 @@ abstract class ContextLoaderUtils {
 					rootDeclaringClass.getSuperclass(), contextConfigType, contextHierarchyType);
 
 			// Declared on an enclosing class of an inner class?
-			if (desc == null && ClassUtils.isInnerClass(rootDeclaringClass)) {
+			if (desc == null && ClassUtils.isInnerClass(rootDeclaringClass) &&
+					getSearchStrategy(rootDeclaringClass) == SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES) {
 				desc = findAnnotationDescriptorForTypes(
 						rootDeclaringClass.getEnclosingClass(), contextConfigType, contextHierarchyType);
 			}

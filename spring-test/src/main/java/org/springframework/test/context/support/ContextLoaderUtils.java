@@ -39,6 +39,7 @@ import org.springframework.test.context.SmartContextLoader;
 import org.springframework.test.util.MetaAnnotationUtils.UntypedAnnotationDescriptor;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ConcurrentLruCache;
 import org.springframework.util.StringUtils;
 
 import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
@@ -61,6 +62,9 @@ import static org.springframework.test.util.MetaAnnotationUtils.findAnnotationDe
 abstract class ContextLoaderUtils {
 
 	static final String GENERATED_CONTEXT_HIERARCHY_LEVEL_PREFIX = "ContextHierarchyLevel#";
+
+	private static final ConcurrentLruCache<Class<?>, SearchStrategy> cachedSearchStrategies =
+			new ConcurrentLruCache<>(32, ContextLoaderUtils::lookUpSearchStrategy);
 
 	private static final Log logger = LogFactory.getLog(ContextLoaderUtils.class);
 
@@ -268,6 +272,10 @@ abstract class ContextLoaderUtils {
 	 * @since 5.3
 	 */
 	static SearchStrategy getSearchStrategy(Class<?> testClass) {
+		return cachedSearchStrategies.get(testClass);
+	}
+
+	private static SearchStrategy lookUpSearchStrategy(Class<?> testClass) {
 		EnclosingConfiguration enclosingConfiguration =
 			MergedAnnotations.from(testClass, SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES)
 				.stream(NestedTestConfiguration.class)

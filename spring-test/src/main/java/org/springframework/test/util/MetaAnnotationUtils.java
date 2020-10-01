@@ -125,8 +125,7 @@ public abstract class MetaAnnotationUtils {
 		for (Annotation composedAnn : clazz.getDeclaredAnnotations()) {
 			Class<? extends Annotation> composedType = composedAnn.annotationType();
 			if (!AnnotationUtils.isInJavaLangAnnotationPackage(composedType.getName()) && visited.add(composedAnn)) {
-				AnnotationDescriptor<T> descriptor =
-						findAnnotationDescriptor(composedType, visited, annotationType);
+				AnnotationDescriptor<T> descriptor = findAnnotationDescriptor(composedType, visited, annotationType);
 				if (descriptor != null) {
 					return new AnnotationDescriptor<>(
 							clazz, descriptor.getDeclaringClass(), composedAnn, descriptor.getAnnotation());
@@ -240,8 +239,7 @@ public abstract class MetaAnnotationUtils {
 
 		// Declared on an interface?
 		for (Class<?> ifc : clazz.getInterfaces()) {
-			UntypedAnnotationDescriptor descriptor =
-					findAnnotationDescriptorForTypes(ifc, visited, annotationTypes);
+			UntypedAnnotationDescriptor descriptor = findAnnotationDescriptorForTypes(ifc, visited, annotationTypes);
 			if (descriptor != null) {
 				return new UntypedAnnotationDescriptor(clazz, descriptor.getDeclaringClass(),
 						descriptor.getComposedAnnotation(), descriptor.getAnnotation());

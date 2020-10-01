@@ -165,7 +165,7 @@ abstract class ContextLoaderUtils {
 			// Declared on an enclosing class of an inner class?
 			if (desc == null && ClassUtils.isInnerClass(rootDeclaringClass)) {
 				desc = findAnnotationDescriptorForTypes(
-						rootDeclaringClass.getDeclaringClass(), searchStrategy, contextConfigType, contextHierarchyType);
+						rootDeclaringClass.getEnclosingClass(), searchStrategy, contextConfigType, contextHierarchyType);
 			}
 		}
 

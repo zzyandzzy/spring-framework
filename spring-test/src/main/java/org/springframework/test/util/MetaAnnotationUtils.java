@@ -157,7 +157,7 @@ public abstract class MetaAnnotationUtils {
 
 		// Declared on an enclosing class of an inner class?
 		if (searchStrategy == SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES && ClassUtils.isInnerClass(clazz)) {
-			descriptor = findAnnotationDescriptor(clazz.getDeclaringClass(), visited, annotationType, searchStrategy);
+			descriptor = findAnnotationDescriptor(clazz.getEnclosingClass(), visited, annotationType, searchStrategy);
 			if (descriptor != null) {
 				return descriptor;
 			}
@@ -274,7 +274,7 @@ public abstract class MetaAnnotationUtils {
 
 		// Declared on an enclosing class of an inner class?
 		if (searchStrategy == SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES && ClassUtils.isInnerClass(clazz)) {
-			descriptor = findAnnotationDescriptorForTypes(clazz.getDeclaringClass(), searchStrategy, visited, annotationTypes);
+			descriptor = findAnnotationDescriptorForTypes(clazz.getEnclosingClass(), searchStrategy, visited, annotationTypes);
 			if (descriptor != null) {
 				return descriptor;
 			}

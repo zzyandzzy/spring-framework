@@ -23,11 +23,15 @@ import java.util.Set;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
 import org.springframework.core.style.ToStringCreator;
 import org.springframework.lang.Nullable;
+import org.springframework.test.context.NestedTestConfiguration;
+import org.springframework.test.context.NestedTestConfiguration.EnclosingConfiguration;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ConcurrentLruCache;
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -58,6 +62,10 @@ import org.springframework.util.ObjectUtils;
  */
 public abstract class MetaAnnotationUtils {
 
+	private static final ConcurrentLruCache<Class<?>, SearchStrategy> cachedSearchStrategies =
+			new ConcurrentLruCache<>(32, MetaAnnotationUtils::lookUpSearchStrategy);
+
+
 	/**
 	 * Find the {@link AnnotationDescriptor} for the supplied {@code annotationType}
 	 * on the supplied {@link Class}, traversing its annotations, interfaces, and
@@ -83,22 +91,10 @@ public abstract class MetaAnnotationUtils {
 	 * @see #findAnnotationDescriptorForTypes(Class, Class...)
 	 */
 	@Nullable
-	@Deprecated
 	public static <T extends Annotation> AnnotationDescriptor<T> findAnnotationDescriptor(
 			Class<?> clazz, Class<T> annotationType) {
 
-		return findAnnotationDescriptor(clazz, annotationType, SearchStrategy.TYPE_HIERARCHY);
-	}
-
-	/**
-	 * @since 5.3
-	 */
-	@Nullable
-	public static <T extends Annotation> AnnotationDescriptor<T> findAnnotationDescriptor(
-			Class<?> clazz, Class<T> annotationType, SearchStrategy searchStrategy) {
-
-		assertSupportedSearchStrategy(searchStrategy);
-		return findAnnotationDescriptor(clazz, new HashSet<>(), annotationType, searchStrategy);
+		return findAnnotationDescriptor(clazz, new HashSet<>(), annotationType);
 	}
 
 	/**
@@ -113,8 +109,7 @@ public abstract class MetaAnnotationUtils {
 	 */
 	@Nullable
 	private static <T extends Annotation> AnnotationDescriptor<T> findAnnotationDescriptor(
-			@Nullable Class<?> clazz, Set<Annotation> visited, Class<T> annotationType,
-			SearchStrategy searchStrategy) {
+			@Nullable Class<?> clazz, Set<Annotation> visited, Class<T> annotationType) {
 
 		Assert.notNull(annotationType, "Annotation type must not be null");
 		if (clazz == null || Object.class == clazz) {
@@ -131,7 +126,7 @@ public abstract class MetaAnnotationUtils {
 			Class<? extends Annotation> composedType = composedAnn.annotationType();
 			if (!AnnotationUtils.isInJavaLangAnnotationPackage(composedType.getName()) && visited.add(composedAnn)) {
 				AnnotationDescriptor<T> descriptor =
-						findAnnotationDescriptor(composedType, visited, annotationType, searchStrategy);
+						findAnnotationDescriptor(composedType, visited, annotationType);
 				if (descriptor != null) {
 					return new AnnotationDescriptor<>(
 							clazz, descriptor.getDeclaringClass(), composedAnn, descriptor.getAnnotation());
@@ -141,7 +136,7 @@ public abstract class MetaAnnotationUtils {
 
 		// Declared on an interface?
 		for (Class<?> ifc : clazz.getInterfaces()) {
-			AnnotationDescriptor<T> descriptor = findAnnotationDescriptor(ifc, visited, annotationType, searchStrategy);
+			AnnotationDescriptor<T> descriptor = findAnnotationDescriptor(ifc, visited, annotationType);
 			if (descriptor != null) {
 				return new AnnotationDescriptor<>(clazz, descriptor.getDeclaringClass(),
 						descriptor.getComposedAnnotation(), descriptor.getAnnotation());
@@ -150,14 +145,15 @@ public abstract class MetaAnnotationUtils {
 
 		// Declared on a superclass?
 		AnnotationDescriptor<T> descriptor =
-				findAnnotationDescriptor(clazz.getSuperclass(), visited, annotationType, searchStrategy);
+				findAnnotationDescriptor(clazz.getSuperclass(), visited, annotationType);
 		if (descriptor != null) {
 			return descriptor;
 		}
 
+		SearchStrategy searchStrategy = getSearchStrategy(clazz);
 		// Declared on an enclosing class of an inner class?
 		if (searchStrategy == SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES && ClassUtils.isInnerClass(clazz)) {
-			descriptor = findAnnotationDescriptor(clazz.getEnclosingClass(), visited, annotationType, searchStrategy);
+			descriptor = findAnnotationDescriptor(clazz.getEnclosingClass(), visited, annotationType);
 			if (descriptor != null) {
 				return descriptor;
 			}
@@ -197,23 +193,10 @@ public abstract class MetaAnnotationUtils {
 	 */
 	@SuppressWarnings("unchecked")
 	@Nullable
-	@Deprecated
 	public static UntypedAnnotationDescriptor findAnnotationDescriptorForTypes(
 			Class<?> clazz, Class<? extends Annotation>... annotationTypes) {
 
-		return findAnnotationDescriptorForTypes(clazz, SearchStrategy.TYPE_HIERARCHY, annotationTypes);
-	}
-
-	/**
-	 * @since 5.3
-	 */
-	@SuppressWarnings("unchecked")
-	@Nullable
-	public static UntypedAnnotationDescriptor findAnnotationDescriptorForTypes(Class<?> clazz,
-			SearchStrategy searchStrategy, Class<? extends Annotation>... annotationTypes) {
-
-		assertSupportedSearchStrategy(searchStrategy);
-		return findAnnotationDescriptorForTypes(clazz, searchStrategy, new HashSet<>(), annotationTypes);
+		return findAnnotationDescriptorForTypes(clazz, new HashSet<>(), annotationTypes);
 	}
 
 	/**
@@ -229,7 +212,7 @@ public abstract class MetaAnnotationUtils {
 	@SuppressWarnings("unchecked")
 	@Nullable
 	private static UntypedAnnotationDescriptor findAnnotationDescriptorForTypes(@Nullable Class<?> clazz,
-			SearchStrategy searchStrategy, Set<Annotation> visited, Class<? extends Annotation>... annotationTypes) {
+			Set<Annotation> visited, Class<? extends Annotation>... annotationTypes) {
 
 		assertNonEmptyAnnotationTypeArray(annotationTypes, "The list of annotation types must not be empty");
 		if (clazz == null || Object.class == clazz) {
@@ -247,7 +230,7 @@ public abstract class MetaAnnotationUtils {
 		for (Annotation composedAnnotation : clazz.getDeclaredAnnotations()) {
 			if (!AnnotationUtils.isInJavaLangAnnotationPackage(composedAnnotation) && visited.add(composedAnnotation)) {
 				UntypedAnnotationDescriptor descriptor = findAnnotationDescriptorForTypes(
-						composedAnnotation.annotationType(), searchStrategy, visited, annotationTypes);
+						composedAnnotation.annotationType(), visited, annotationTypes);
 				if (descriptor != null) {
 					return new UntypedAnnotationDescriptor(clazz, descriptor.getDeclaringClass(),
 							composedAnnotation, descriptor.getAnnotation());
@@ -258,7 +241,7 @@ public abstract class MetaAnnotationUtils {
 		// Declared on an interface?
 		for (Class<?> ifc : clazz.getInterfaces()) {
 			UntypedAnnotationDescriptor descriptor =
-					findAnnotationDescriptorForTypes(ifc, searchStrategy, visited, annotationTypes);
+					findAnnotationDescriptorForTypes(ifc, visited, annotationTypes);
 			if (descriptor != null) {
 				return new UntypedAnnotationDescriptor(clazz, descriptor.getDeclaringClass(),
 						descriptor.getComposedAnnotation(), descriptor.getAnnotation());
@@ -267,14 +250,15 @@ public abstract class MetaAnnotationUtils {
 
 		// Declared on a superclass?
 		UntypedAnnotationDescriptor descriptor =
-				findAnnotationDescriptorForTypes(clazz.getSuperclass(), searchStrategy, visited, annotationTypes);
+				findAnnotationDescriptorForTypes(clazz.getSuperclass(), visited, annotationTypes);
 		if (descriptor != null) {
 			return descriptor;
 		}
 
+		SearchStrategy searchStrategy = getSearchStrategy(clazz);
 		// Declared on an enclosing class of an inner class?
 		if (searchStrategy == SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES && ClassUtils.isInnerClass(clazz)) {
-			descriptor = findAnnotationDescriptorForTypes(clazz.getEnclosingClass(), searchStrategy, visited, annotationTypes);
+			descriptor = findAnnotationDescriptorForTypes(clazz.getEnclosingClass(), visited, annotationTypes);
 			if (descriptor != null) {
 				return descriptor;
 			}
@@ -283,10 +267,26 @@ public abstract class MetaAnnotationUtils {
 		return null;
 	}
 
-	private static void assertSupportedSearchStrategy(SearchStrategy searchStrategy) {
-		Assert.isTrue(searchStrategy == SearchStrategy.TYPE_HIERARCHY
-					|| searchStrategy == SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES,
-			"SearchStrategy must be TYPE_HIERARCHY or TYPE_HIERARCHY_AND_ENCLOSING_CLASSES");
+	/**
+	 * Get the {@link SearchStrategy} for the supplied class.
+	 * @param clazz the class for which the search strategy should be resolved
+	 * @return the resolved search strategy
+	 * @since 5.3
+	 */
+	public static SearchStrategy getSearchStrategy(Class<?> clazz) {
+		return cachedSearchStrategies.get(clazz);
+	}
+
+	private static SearchStrategy lookUpSearchStrategy(Class<?> clazz) {
+		EnclosingConfiguration enclosingConfiguration =
+			MergedAnnotations.from(clazz, SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES)
+				.stream(NestedTestConfiguration.class)
+				.map(mergedAnnotation -> mergedAnnotation.getEnum("value", EnclosingConfiguration.class))
+				.findFirst()
+				.orElse(EnclosingConfiguration.OVERRIDE);
+		return (enclosingConfiguration == EnclosingConfiguration.INHERIT ?
+				SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES :
+				SearchStrategy.TYPE_HIERARCHY);
 	}
 
 	private static void assertNonEmptyAnnotationTypeArray(Class<?>[] annotationTypes, String message) {

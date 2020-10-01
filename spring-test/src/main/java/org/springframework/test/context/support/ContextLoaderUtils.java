@@ -29,22 +29,19 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.annotation.MergedAnnotation;
 import org.springframework.core.annotation.MergedAnnotations;
-import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.ContextConfigurationAttributes;
 import org.springframework.test.context.ContextHierarchy;
-import org.springframework.test.context.NestedTestConfiguration;
-import org.springframework.test.context.NestedTestConfiguration.EnclosingConfiguration;
 import org.springframework.test.context.SmartContextLoader;
 import org.springframework.test.util.MetaAnnotationUtils.UntypedAnnotationDescriptor;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
-import org.springframework.util.ConcurrentLruCache;
 import org.springframework.util.StringUtils;
 
 import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
 import static org.springframework.core.annotation.AnnotationUtils.isAnnotationDeclaredLocally;
 import static org.springframework.test.util.MetaAnnotationUtils.findAnnotationDescriptorForTypes;
+import static org.springframework.test.util.MetaAnnotationUtils.getSearchStrategy;
 
 /**
  * Utility methods for resolving {@link ContextConfigurationAttributes} from the
@@ -62,9 +59,6 @@ import static org.springframework.test.util.MetaAnnotationUtils.findAnnotationDe
 abstract class ContextLoaderUtils {
 
 	static final String GENERATED_CONTEXT_HIERARCHY_LEVEL_PREFIX = "ContextHierarchyLevel#";
-
-	private static final ConcurrentLruCache<Class<?>, SearchStrategy> cachedSearchStrategies =
-			new ConcurrentLruCache<>(32, ContextLoaderUtils::lookUpSearchStrategy);
 
 	private static final Log logger = LogFactory.getLog(ContextLoaderUtils.class);
 
@@ -110,10 +104,9 @@ abstract class ContextLoaderUtils {
 		Class<ContextConfiguration> contextConfigType = ContextConfiguration.class;
 		Class<ContextHierarchy> contextHierarchyType = ContextHierarchy.class;
 		List<List<ContextConfigurationAttributes>> hierarchyAttributes = new ArrayList<>();
-		SearchStrategy searchStrategy = ContextLoaderUtils.getSearchStrategy(testClass);
 
 		UntypedAnnotationDescriptor desc =
-				findAnnotationDescriptorForTypes(testClass, searchStrategy, contextConfigType, contextHierarchyType);
+				findAnnotationDescriptorForTypes(testClass, contextConfigType, contextHierarchyType);
 		Assert.notNull(desc, () -> String.format(
 					"Could not find an 'annotation declaring class' for annotation type [%s] or [%s] and test class [%s]",
 					contextConfigType.getName(), contextHierarchyType.getName(), testClass.getName()));
@@ -160,16 +153,14 @@ abstract class ContextLoaderUtils {
 
 			hierarchyAttributes.add(0, configAttributesList);
 
-			searchStrategy = ContextLoaderUtils.getSearchStrategy(rootDeclaringClass);
-
 			// Declared on a superclass?
 			desc = findAnnotationDescriptorForTypes(
-					rootDeclaringClass.getSuperclass(), searchStrategy, contextConfigType, contextHierarchyType);
+					rootDeclaringClass.getSuperclass(), contextConfigType, contextHierarchyType);
 
 			// Declared on an enclosing class of an inner class?
 			if (desc == null && ClassUtils.isInnerClass(rootDeclaringClass)) {
 				desc = findAnnotationDescriptorForTypes(
-						rootDeclaringClass.getEnclosingClass(), searchStrategy, contextConfigType, contextHierarchyType);
+						rootDeclaringClass.getEnclosingClass(), contextConfigType, contextHierarchyType);
 			}
 		}
 
@@ -266,25 +257,6 @@ abstract class ContextLoaderUtils {
 		mergedAnnotations.stream(annotationType).forEach(mergedAnnotation ->
 				resolveContextConfigurationAttributes(attributesList, mergedAnnotation));
 		return attributesList;
-	}
-
-	/**
-	 * @since 5.3
-	 */
-	static SearchStrategy getSearchStrategy(Class<?> testClass) {
-		return cachedSearchStrategies.get(testClass);
-	}
-
-	private static SearchStrategy lookUpSearchStrategy(Class<?> testClass) {
-		EnclosingConfiguration enclosingConfiguration =
-			MergedAnnotations.from(testClass, SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES)
-				.stream(NestedTestConfiguration.class)
-				.map(mergedAnnotation -> mergedAnnotation.getEnum("value", EnclosingConfiguration.class))
-				.findFirst()
-				.orElse(EnclosingConfiguration.OVERRIDE);
-		return (enclosingConfiguration == EnclosingConfiguration.INHERIT ?
-				SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES :
-				SearchStrategy.TYPE_HIERARCHY);
 	}
 
 	private static void resolveContextConfigurationAttributes(List<ContextConfigurationAttributes> attributesList,

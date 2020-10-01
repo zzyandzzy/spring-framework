@@ -63,7 +63,7 @@ public class DefaultActiveProfilesResolver implements ActiveProfilesResolver {
 
 		Class<ActiveProfiles> annotationType = ActiveProfiles.class;
 		AnnotationDescriptor<ActiveProfiles> descriptor =
-				findAnnotationDescriptor(testClass, annotationType, ContextLoaderUtils.getSearchStrategy(testClass));
+				findAnnotationDescriptor(testClass, annotationType);
 
 		if (descriptor == null) {
 			if (logger.isDebugEnabled()) {

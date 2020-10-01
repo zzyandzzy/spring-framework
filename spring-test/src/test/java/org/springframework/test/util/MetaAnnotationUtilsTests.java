@@ -45,7 +45,6 @@ import static org.springframework.test.util.MetaAnnotationUtils.findAnnotationDe
  * @since 4.0
  * @see OverriddenMetaAnnotationAttributesTests
  */
-@SuppressWarnings("deprecation")
 class MetaAnnotationUtilsTests {
 
 	private void assertAtComponentOnComposedAnnotation(

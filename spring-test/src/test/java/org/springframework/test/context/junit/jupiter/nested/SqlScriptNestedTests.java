@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringJUnitConfig(PopulatedSchemaDatabaseConfig.class)
 @Transactional
 @TestInstance(Lifecycle.PER_CLASS)
-class NestedTestsWithSqlScriptsAndJUnitJupiterTests {
+class SqlScriptNestedTests {
 
 	@Autowired
 	JdbcTemplate jdbcTemplate;

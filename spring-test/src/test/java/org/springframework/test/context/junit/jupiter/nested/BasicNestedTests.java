@@ -27,7 +27,7 @@ import org.springframework.test.context.NestedTestConfiguration.EnclosingConfigu
 import org.springframework.test.context.junit.SpringJUnitJupiterTestSuite;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import org.springframework.test.context.junit.jupiter.nested.NestedTestsWithSpringAndJUnitJupiterTests.TopLevelConfig;
+import org.springframework.test.context.junit.jupiter.nested.BasicNestedTests.TopLevelConfig;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,11 +40,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Sam Brannen
  * @since 5.0
- * @see NestedTestsWithConstructorInjectionWithSpringAndJUnitJupiterTests
+ * @see ConstructorInjectionNestedTests
  * @see org.springframework.test.context.junit4.nested.NestedTestsWithSpringRulesTests
  */
 @SpringJUnitConfig(TopLevelConfig.class)
-class NestedTestsWithSpringAndJUnitJupiterTests {
+class BasicNestedTests {
 
 	private static final String FOO = "foo";
 	private static final String BAR = "bar";
@@ -73,12 +73,11 @@ class NestedTestsWithSpringAndJUnitJupiterTests {
 			// field in the outer instance should have been injected from the
 			// test ApplicationContext for the outer instance.
 			assertThat(foo).isEqualTo(FOO);
-			assertThat(bar).isEqualTo(BAR);
+			assertThat(this.bar).isEqualTo(BAR);
 		}
 	}
 
 	@Nested
-	// @SpringJUnitConfig(NestedConfig.class)
 	@NestedTestConfiguration(EnclosingConfiguration.INHERIT)
 	class NestedTestCaseWithInheritedConfigTests {
 
@@ -92,7 +91,26 @@ class NestedTestsWithSpringAndJUnitJupiterTests {
 			// and the bar field in the inner instance should both have been injected
 			// from the test ApplicationContext for the outer instance.
 			assertThat(foo).isEqualTo(FOO);
-			assertThat(bar).isEqualTo(FOO);
+			assertThat(this.bar).isEqualTo(FOO);
+		}
+
+		@Nested
+		@NestedTestConfiguration(EnclosingConfiguration.OVERRIDE)
+		@SpringJUnitConfig(NestedConfig.class)
+		class DoublyNestedTestCaseWithOverriddenConfigTests {
+
+			@Autowired
+			String bar;
+
+
+			@Test
+			void nestedTest() throws Exception {
+				// In contrast to nested test classes running in JUnit 4, the foo
+				// field in the outer instance should have been injected from the
+				// test ApplicationContext for the outer instance.
+				assertThat(foo).isEqualTo(FOO);
+				assertThat(this.bar).isEqualTo(BAR);
+			}
 		}
 	}
 

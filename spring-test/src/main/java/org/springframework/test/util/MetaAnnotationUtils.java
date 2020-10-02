@@ -280,6 +280,7 @@ public abstract class MetaAnnotationUtils {
 				.map(mergedAnnotation -> mergedAnnotation.getEnum("value", EnclosingConfiguration.class))
 				.findFirst()
 				.orElse(EnclosingConfiguration.OVERRIDE);
+		// TODO Consider making the default EnclosingConfiguration mode globally configurable via SpringProperties.
 		return (enclosingConfiguration == EnclosingConfiguration.INHERIT ?
 				SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES :
 				SearchStrategy.TYPE_HIERARCHY);

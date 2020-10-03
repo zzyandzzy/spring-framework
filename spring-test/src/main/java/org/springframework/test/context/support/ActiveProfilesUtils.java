@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,13 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ActiveProfilesResolver;
-import org.springframework.test.util.MetaAnnotationUtils;
 import org.springframework.test.util.MetaAnnotationUtils.AnnotationDescriptor;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+
+import static org.springframework.test.util.MetaAnnotationUtils.findAnnotationDescriptor;
+import static org.springframework.test.util.MetaAnnotationUtils.searchEnclosingClass;
 
 /**
  * Utility methods for working with {@link ActiveProfiles @ActiveProfiles} and
@@ -73,8 +75,7 @@ abstract class ActiveProfilesUtils {
 		final List<String[]> profileArrays = new ArrayList<>();
 
 		Class<ActiveProfiles> annotationType = ActiveProfiles.class;
-		AnnotationDescriptor<ActiveProfiles> descriptor =
-				MetaAnnotationUtils.findAnnotationDescriptor(testClass, annotationType);
+		AnnotationDescriptor<ActiveProfiles> descriptor = findAnnotationDescriptor(testClass, annotationType);
 		if (descriptor == null && logger.isDebugEnabled()) {
 			logger.debug(String.format(
 					"Could not find an 'annotation declaring class' for annotation type [%s] and class [%s]",
@@ -112,8 +113,18 @@ abstract class ActiveProfilesUtils {
 				profileArrays.add(profiles);
 			}
 
-			descriptor = (annotation.inheritProfiles() ? MetaAnnotationUtils.findAnnotationDescriptor(
-					rootDeclaringClass.getSuperclass(), annotationType) : null);
+			if (annotation.inheritProfiles()) {
+				// Declared on a superclass?
+				descriptor = findAnnotationDescriptor(rootDeclaringClass.getSuperclass(), annotationType);
+
+				// Declared on an enclosing class of an inner class?
+				if (descriptor == null && searchEnclosingClass(rootDeclaringClass)) {
+					descriptor = findAnnotationDescriptor(rootDeclaringClass.getEnclosingClass(), annotationType);
+				}
+			}
+			else {
+				descriptor = null;
+			}
 		}
 
 		// Reverse the list so that we can traverse "down" the hierarchy.

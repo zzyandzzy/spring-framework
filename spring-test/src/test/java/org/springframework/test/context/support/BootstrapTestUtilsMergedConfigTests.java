@@ -22,6 +22,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.assertj.core.api.AssertionsForClassTypes;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.test.context.BootstrapTestUtils;
@@ -257,7 +258,21 @@ class BootstrapTestUtilsMergedConfigTests extends AbstractContextConfigurationUt
 		MergedContextConfiguration mergedConfig = buildMergedContextConfiguration(testClass);
 
 		assertMergedConfig(mergedConfig, testClass, EMPTY_STRING_ARRAY, expectedClasses,
-			AnnotationConfigContextLoader.class);
+			DelegatingSmartContextLoader.class);
+	}
+
+	/**
+	 * @since 5.3
+	 */
+	@Test
+	@Disabled("tracking down bug")
+	public void buildMergedConfigForDoubleNestedTestClassWithInheritedOverriddenConfig() {
+		Class<?> testClass = OuterTestCase.NestedTestCaseWithOverriddenConfig.DoubleNestedTestCaseWithInheritedOverriddenConfig.class;
+		Class<?>[] expectedClasses = array(BarConfig.class);
+		MergedContextConfiguration mergedConfig = buildMergedContextConfiguration(testClass);
+
+		assertMergedConfig(mergedConfig, testClass, EMPTY_STRING_ARRAY, expectedClasses,
+			DelegatingSmartContextLoader.class);
 	}
 
 	/**

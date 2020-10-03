@@ -16,20 +16,23 @@
 
 package org.springframework.test.context.junit.jupiter.nested;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.NestedTestConfiguration;
-import org.springframework.test.context.NestedTestConfiguration.EnclosingConfiguration;
 import org.springframework.test.context.junit.SpringJUnitJupiterTestSuite;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.context.junit.jupiter.nested.BasicNestedTests.TopLevelConfig;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.context.NestedTestConfiguration.EnclosingConfiguration.INHERIT;
+import static org.springframework.test.context.NestedTestConfiguration.EnclosingConfiguration.OVERRIDE;
 
 /**
  * Integration tests that verify support for {@code @Nested} test classes
@@ -63,53 +66,91 @@ class BasicNestedTests {
 	@SpringJUnitConfig(NestedConfig.class)
 	class NestedTests {
 
+		@Autowired(required = false)
+		@Qualifier("foo")
+		String localFoo;
+
 		@Autowired
 		String bar;
 
 
 		@Test
-		void nestedTest() throws Exception {
+		void test() {
 			// In contrast to nested test classes running in JUnit 4, the foo
 			// field in the outer instance should have been injected from the
 			// test ApplicationContext for the outer instance.
 			assertThat(foo).isEqualTo(FOO);
+			assertThat(this.localFoo).as("foo bean should not be present").isNull();
 			assertThat(this.bar).isEqualTo(BAR);
 		}
 	}
 
 	@Nested
-	@NestedTestConfiguration(EnclosingConfiguration.INHERIT)
+	@NestedTestConfiguration(INHERIT)
 	class NestedTestCaseWithInheritedConfigTests {
+
+		@Autowired(required = false)
+		@Qualifier("foo")
+		String localFoo;
 
 		@Autowired
 		String bar;
 
 
 		@Test
-		void nestedTest() throws Exception {
+		void test() {
 			// Since the configuration is inherited, the foo field in the outer instance
 			// and the bar field in the inner instance should both have been injected
 			// from the test ApplicationContext for the outer instance.
 			assertThat(foo).isEqualTo(FOO);
+			assertThat(this.localFoo).isEqualTo(FOO);
 			assertThat(this.bar).isEqualTo(FOO);
 		}
 
+
 		@Nested
-		@NestedTestConfiguration(EnclosingConfiguration.OVERRIDE)
+		@NestedTestConfiguration(OVERRIDE)
 		@SpringJUnitConfig(NestedConfig.class)
-		class DoublyNestedTestCaseWithOverriddenConfigTests {
+		class DoubleNestedWithOverriddenConfigTests {
+
+			@Autowired(required = false)
+			@Qualifier("foo")
+			String localFoo;
 
 			@Autowired
 			String bar;
 
 
 			@Test
-			void nestedTest() throws Exception {
+			void test() {
 				// In contrast to nested test classes running in JUnit 4, the foo
 				// field in the outer instance should have been injected from the
 				// test ApplicationContext for the outer instance.
 				assertThat(foo).isEqualTo(FOO);
+				assertThat(this.localFoo).as("foo bean should not be present").isNull();
 				assertThat(this.bar).isEqualTo(BAR);
+			}
+
+
+			@Nested
+			@NestedTestConfiguration(INHERIT)
+			class TripleNestedWithInheritedConfigTests {
+
+				@Autowired(required = false)
+				@Qualifier("foo")
+				String localFoo;
+
+				@Autowired
+				String bar;
+
+
+				@Test
+				@Disabled("not currently working")
+				void test() {
+					assertThat(foo).isEqualTo(FOO);
+					assertThat(this.localFoo).as("foo bean should not be present").isNull();
+					assertThat(this.bar).isEqualTo(BAR);
+				}
 			}
 		}
 	}

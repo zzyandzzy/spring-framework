@@ -37,11 +37,12 @@ import org.springframework.test.context.ContextHierarchy;
 import org.springframework.test.context.ContextLoader;
 import org.springframework.test.context.MergedContextConfiguration;
 import org.springframework.test.context.NestedTestConfiguration;
-import org.springframework.test.context.NestedTestConfiguration.EnclosingConfiguration;
 import org.springframework.test.context.TestContextBootstrapper;
 import org.springframework.test.context.web.WebAppConfiguration;
 
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
+import static org.springframework.test.context.NestedTestConfiguration.EnclosingConfiguration.INHERIT;
+import static org.springframework.test.context.NestedTestConfiguration.EnclosingConfiguration.OVERRIDE;
 
 /**
  * Abstract base class for tests involving {@link ContextLoaderUtils},
@@ -234,21 +235,23 @@ abstract class AbstractContextConfigurationUtilsTests {
 	}
 
 	@ContextConfiguration(classes = FooConfig.class, loader = AnnotationConfigContextLoader.class)
-	@ActiveProfiles("foo")
-	@NestedTestConfiguration(EnclosingConfiguration.INHERIT)
+	@NestedTestConfiguration(INHERIT)
 	static class OuterTestCase {
 
 		class NestedTestCaseWithInheritedConfig {
 		}
 
 		@ContextConfiguration(classes = BarConfig.class)
-		@ActiveProfiles("bar")
 		class NestedTestCaseWithMergedInheritedConfig {
 		}
 
-		@ContextConfiguration(classes = BarConfig.class, inheritLocations = false)
-		@ActiveProfiles(profiles = "bar", inheritProfiles = false)
+		@NestedTestConfiguration(OVERRIDE)
+		@ContextConfiguration(classes = BarConfig.class)
 		class NestedTestCaseWithOverriddenConfig {
+
+			@NestedTestConfiguration(INHERIT)
+			class DoubleNestedTestCaseWithInheritedOverriddenConfig {
+			}
 		}
 
 	}
@@ -257,7 +260,7 @@ abstract class AbstractContextConfigurationUtilsTests {
 		@ContextConfiguration(classes = FooConfig.class, loader = AnnotationConfigContextLoader.class, name = "foo"), //
 		@ContextConfiguration(classes = BarConfig.class, loader = AnnotationConfigContextLoader.class, name = "bar")//
 	})
-	@NestedTestConfiguration(EnclosingConfiguration.INHERIT)
+	@NestedTestConfiguration(INHERIT)
 	static class ContextHierarchyOuterTestCase {
 
 		class NestedTestCaseWithInheritedConfig {

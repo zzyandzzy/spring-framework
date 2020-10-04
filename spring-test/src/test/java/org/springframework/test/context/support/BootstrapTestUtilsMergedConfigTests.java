@@ -22,7 +22,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.assertj.core.api.AssertionsForClassTypes;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.test.context.BootstrapTestUtils;
@@ -265,7 +264,6 @@ class BootstrapTestUtilsMergedConfigTests extends AbstractContextConfigurationUt
 	 * @since 5.3
 	 */
 	@Test
-	@Disabled("tracking down bug")
 	public void buildMergedConfigForDoubleNestedTestClassWithInheritedOverriddenConfig() {
 		Class<?> testClass = OuterTestCase.NestedTestCaseWithOverriddenConfig.DoubleNestedTestCaseWithInheritedOverriddenConfig.class;
 		Class<?>[] expectedClasses = array(BarConfig.class);

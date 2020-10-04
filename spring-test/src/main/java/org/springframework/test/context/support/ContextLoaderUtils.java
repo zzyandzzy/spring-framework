@@ -27,20 +27,19 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.core.annotation.MergedAnnotation;
-import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.ContextConfigurationAttributes;
 import org.springframework.test.context.ContextHierarchy;
 import org.springframework.test.context.SmartContextLoader;
+import org.springframework.test.util.MetaAnnotationUtils.AnnotationDescriptor;
 import org.springframework.test.util.MetaAnnotationUtils.UntypedAnnotationDescriptor;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
 import static org.springframework.core.annotation.AnnotationUtils.isAnnotationDeclaredLocally;
+import static org.springframework.test.util.MetaAnnotationUtils.findAnnotationDescriptor;
 import static org.springframework.test.util.MetaAnnotationUtils.findAnnotationDescriptorForTypes;
-import static org.springframework.test.util.MetaAnnotationUtils.getSearchStrategy;
 import static org.springframework.test.util.MetaAnnotationUtils.searchEnclosingClass;
 
 /**
@@ -248,23 +247,35 @@ abstract class ContextLoaderUtils {
 		Assert.notNull(testClass, "Class must not be null");
 
 		Class<ContextConfiguration> annotationType = ContextConfiguration.class;
-		MergedAnnotations mergedAnnotations = MergedAnnotations.from(testClass, getSearchStrategy(testClass));
-		Assert.isTrue(mergedAnnotations.isPresent(annotationType), () -> String.format(
-			"Could not find an 'annotation declaring class' for annotation type [%s] and class [%s]",
-			annotationType.getName(), testClass.getName()));
+		AnnotationDescriptor<ContextConfiguration> descriptor = findAnnotationDescriptor(testClass, annotationType);
+		Assert.notNull(descriptor, () -> String.format(
+					"Could not find an 'annotation declaring class' for annotation type [%s] and class [%s]",
+					annotationType.getName(), testClass.getName()));
 
 		List<ContextConfigurationAttributes> attributesList = new ArrayList<>();
-		mergedAnnotations.stream(annotationType).forEach(mergedAnnotation ->
-				resolveContextConfigurationAttributes(attributesList, mergedAnnotation));
+		resolveContextConfigurationAttributes(attributesList, descriptor);
 		return attributesList;
 	}
 
 	private static void resolveContextConfigurationAttributes(List<ContextConfigurationAttributes> attributesList,
-			MergedAnnotation<ContextConfiguration> mergedAnnotation) {
+			AnnotationDescriptor<ContextConfiguration> descriptor) {
 
-		Class<?> rootDeclaringClass = (Class<?>) mergedAnnotation.getSource();
-		convertContextConfigToConfigAttributesAndAddToList(mergedAnnotation.synthesize(),
+		Class<?> rootDeclaringClass = descriptor.getRootDeclaringClass();
+		convertContextConfigToConfigAttributesAndAddToList(descriptor.synthesizeAnnotation(),
 				rootDeclaringClass, attributesList);
+
+		// Declared on a superclass?
+		descriptor = findAnnotationDescriptor(rootDeclaringClass.getSuperclass(), ContextConfiguration.class);
+		if (descriptor != null) {
+			resolveContextConfigurationAttributes(attributesList, descriptor);
+		}
+		// Declared on an enclosing class of an inner class?
+		else if (searchEnclosingClass(rootDeclaringClass)) {
+			descriptor = findAnnotationDescriptor(rootDeclaringClass.getEnclosingClass(), ContextConfiguration.class);
+			if (descriptor != null) {
+				resolveContextConfigurationAttributes(attributesList, descriptor);
+			}
+		}
 	}
 
 	/**

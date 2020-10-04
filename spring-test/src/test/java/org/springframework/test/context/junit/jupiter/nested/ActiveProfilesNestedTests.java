@@ -18,7 +18,6 @@ package org.springframework.test.context.junit.jupiter.nested;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -134,10 +133,8 @@ class ActiveProfilesNestedTests {
 
 
 				@Test
-				@Disabled("not currently working")
 				void test() {
 					assertThat(strings).containsExactly("X", "A1");
-					// TODO Figure out how "X" from Config1 is included
 					assertThat(this.localStrings).containsExactly("Y", "A2", "Z");
 				}
 			}

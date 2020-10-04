@@ -16,7 +16,6 @@
 
 package org.springframework.test.context.junit.jupiter.nested;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -145,7 +144,6 @@ class BasicNestedTests {
 
 
 				@Test
-				@Disabled("not currently working")
 				void test() {
 					assertThat(foo).isEqualTo(FOO);
 					assertThat(this.localFoo).as("foo bean should not be present").isNull();

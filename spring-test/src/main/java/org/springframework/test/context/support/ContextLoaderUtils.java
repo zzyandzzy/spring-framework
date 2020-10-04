@@ -40,7 +40,6 @@ import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
 import static org.springframework.core.annotation.AnnotationUtils.isAnnotationDeclaredLocally;
 import static org.springframework.test.util.MetaAnnotationUtils.findAnnotationDescriptor;
 import static org.springframework.test.util.MetaAnnotationUtils.findAnnotationDescriptorForTypes;
-import static org.springframework.test.util.MetaAnnotationUtils.searchEnclosingClass;
 
 /**
  * Utility methods for resolving {@link ContextConfigurationAttributes} from the
@@ -152,15 +151,7 @@ abstract class ContextLoaderUtils {
 
 			hierarchyAttributes.add(0, configAttributesList);
 
-			// Declared on a superclass?
-			desc = findAnnotationDescriptorForTypes(
-					rootDeclaringClass.getSuperclass(), contextConfigType, contextHierarchyType);
-
-			// Declared on an enclosing class of an inner class?
-			if (desc == null && searchEnclosingClass(rootDeclaringClass)) {
-				desc = findAnnotationDescriptorForTypes(
-						rootDeclaringClass.getEnclosingClass(), contextConfigType, contextHierarchyType);
-			}
+			desc = desc.next();
 		}
 
 		return hierarchyAttributes;
@@ -260,21 +251,10 @@ abstract class ContextLoaderUtils {
 	private static void resolveContextConfigurationAttributes(List<ContextConfigurationAttributes> attributesList,
 			AnnotationDescriptor<ContextConfiguration> descriptor) {
 
-		Class<?> rootDeclaringClass = descriptor.getRootDeclaringClass();
-		convertContextConfigToConfigAttributesAndAddToList(descriptor.synthesizeAnnotation(),
-				rootDeclaringClass, attributesList);
-
-		// Declared on a superclass?
-		descriptor = findAnnotationDescriptor(rootDeclaringClass.getSuperclass(), ContextConfiguration.class);
 		if (descriptor != null) {
-			resolveContextConfigurationAttributes(attributesList, descriptor);
-		}
-		// Declared on an enclosing class of an inner class?
-		else if (searchEnclosingClass(rootDeclaringClass)) {
-			descriptor = findAnnotationDescriptor(rootDeclaringClass.getEnclosingClass(), ContextConfiguration.class);
-			if (descriptor != null) {
-				resolveContextConfigurationAttributes(attributesList, descriptor);
-			}
+			convertContextConfigToConfigAttributesAndAddToList(descriptor.synthesizeAnnotation(),
+				descriptor.getRootDeclaringClass(), attributesList);
+			resolveContextConfigurationAttributes(attributesList, descriptor.next());
 		}
 	}
 

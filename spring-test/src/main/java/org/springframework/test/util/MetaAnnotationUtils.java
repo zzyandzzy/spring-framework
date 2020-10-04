@@ -38,6 +38,8 @@ import org.springframework.util.ObjectUtils;
  * {@code MetaAnnotationUtils} is a collection of utility methods that complements
  * the standard support already available in {@link AnnotationUtils}.
  *
+ * <p>Mainly for internal use within the framework.
+ *
  * <p>Whereas {@code AnnotationUtils} provides utilities for <em>getting</em> or
  * <em>finding</em> an annotation, {@code MetaAnnotationUtils} goes a step further
  * by providing support for determining the <em>root class</em> on which an
@@ -220,7 +222,7 @@ public abstract class MetaAnnotationUtils {
 		// Declared locally?
 		for (Class<? extends Annotation> annotationType : annotationTypes) {
 			if (AnnotationUtils.isAnnotationDeclaredLocally(annotationType, clazz)) {
-				return new UntypedAnnotationDescriptor(clazz, clazz.getAnnotation(annotationType));
+				return new UntypedAnnotationDescriptor(clazz, clazz.getAnnotation(annotationType), annotationTypes);
 			}
 		}
 
@@ -231,7 +233,7 @@ public abstract class MetaAnnotationUtils {
 						composedAnnotation.annotationType(), visited, annotationTypes);
 				if (descriptor != null) {
 					return new UntypedAnnotationDescriptor(clazz, descriptor.getDeclaringClass(),
-							composedAnnotation, descriptor.getAnnotation());
+							composedAnnotation, descriptor.getAnnotation(), annotationTypes);
 				}
 			}
 		}
@@ -241,7 +243,7 @@ public abstract class MetaAnnotationUtils {
 			UntypedAnnotationDescriptor descriptor = findAnnotationDescriptorForTypes(ifc, visited, annotationTypes);
 			if (descriptor != null) {
 				return new UntypedAnnotationDescriptor(clazz, descriptor.getDeclaringClass(),
-						descriptor.getComposedAnnotation(), descriptor.getAnnotation());
+						descriptor.getComposedAnnotation(), descriptor.getAnnotation(), annotationTypes);
 			}
 		}
 
@@ -269,7 +271,7 @@ public abstract class MetaAnnotationUtils {
 	 * @return the resolved search strategy
 	 * @since 5.3
 	 */
-	public static SearchStrategy getSearchStrategy(Class<?> clazz) {
+	private static SearchStrategy getSearchStrategy(Class<?> clazz) {
 		return cachedSearchStrategies.get(clazz);
 	}
 
@@ -296,7 +298,7 @@ public abstract class MetaAnnotationUtils {
 	 * @see ClassUtils#isInnerClass(Class)
 	 * @see #getSearchStrategy(Class)
 	 */
-	public static boolean searchEnclosingClass(Class<?> clazz) {
+	private static boolean searchEnclosingClass(Class<?> clazz) {
 		return (ClassUtils.isInnerClass(clazz) &&
 				getSearchStrategy(clazz) == SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES);
 	}
@@ -435,6 +437,35 @@ public abstract class MetaAnnotationUtils {
 		}
 
 		/**
+		 * Find the next {@link AnnotationDescriptor} for the specified
+		 * {@linkplain #getAnnotationType() annotation type} in the hierarchy
+		 * above the {@linkplain #getRootDeclaringClass() root declaring class}
+		 * of this descriptor.
+		 * <p>If a corresponding annotation is found in the superclass hierarchy
+		 * of the root declaring class, that will be returned. Otherwise, an
+		 * attempt will be made to find a corresponding annotation in the
+		 * {@linkplain Class#getEnclosingClass() enclosing class} hierarchy of
+		 * the root declaring class if
+		 * {@linkplain MetaAnnotationUtils#searchEnclosingClass appropriate}.
+		 * @return the next corresponding annotation descriptor if the annotation
+		 * was found; otherwise {@code null}
+		 * @since 5.3
+		 */
+		@Nullable
+		@SuppressWarnings("unchecked")
+		public AnnotationDescriptor<T> next() {
+			Class<T> annotationType = (Class<T>) getAnnotationType();
+			// Declared on a superclass?
+			AnnotationDescriptor<T> descriptor =
+					findAnnotationDescriptor(getRootDeclaringClass().getSuperclass(), annotationType);
+			// Declared on an enclosing class of an inner class?
+			if (descriptor == null && searchEnclosingClass(getRootDeclaringClass())) {
+				descriptor = findAnnotationDescriptor(getRootDeclaringClass().getEnclosingClass(), annotationType);
+			}
+			return descriptor;
+		}
+
+		/**
 		 * Provide a textual representation of this {@code AnnotationDescriptor}.
 		 */
 		@Override
@@ -456,14 +487,43 @@ public abstract class MetaAnnotationUtils {
 	 */
 	public static class UntypedAnnotationDescriptor extends AnnotationDescriptor<Annotation> {
 
+		@Nullable
+		private final Class<? extends Annotation>[] annotationTypes;
+
+		/**
+		 * Create a new {@plain UntypedAnnotationDescriptor}.
+		 * @deprecated As of Spring Framework 5.3, in favor of
+		 * {@link UntypedAnnotationDescriptor#UntypedAnnotationDescriptor(Class, Annotation, Class[])}
+		 */
+		@Deprecated
 		public UntypedAnnotationDescriptor(Class<?> rootDeclaringClass, Annotation annotation) {
-			this(rootDeclaringClass, rootDeclaringClass, null, annotation);
+			this(rootDeclaringClass, annotation, null);
 		}
 
+		public UntypedAnnotationDescriptor(Class<?> rootDeclaringClass, Annotation annotation,
+				@Nullable Class<? extends Annotation>[] annotationTypes) {
+
+			this(rootDeclaringClass, rootDeclaringClass, null, annotation, annotationTypes);
+		}
+
+		/**
+		 * Create a new {@plain UntypedAnnotationDescriptor}.
+		 * @deprecated As of Spring Framework 5.3, in favor of
+		 * {@link UntypedAnnotationDescriptor#UntypedAnnotationDescriptor(Class, Class, Annotation, Annotation, Class[])}
+		 */
+		@Deprecated
 		public UntypedAnnotationDescriptor(Class<?> rootDeclaringClass, Class<?> declaringClass,
 				@Nullable Annotation composedAnnotation, Annotation annotation) {
 
+			this(rootDeclaringClass, declaringClass, composedAnnotation, annotation, null);
+		}
+
+		public UntypedAnnotationDescriptor(Class<?> rootDeclaringClass, Class<?> declaringClass,
+				@Nullable Annotation composedAnnotation, Annotation annotation,
+				@Nullable Class<? extends Annotation>[] annotationTypes) {
+
 			super(rootDeclaringClass, declaringClass, composedAnnotation, annotation);
+			this.annotationTypes = annotationTypes;
 		}
 
 		/**
@@ -476,6 +536,40 @@ public abstract class MetaAnnotationUtils {
 		public Annotation synthesizeAnnotation() {
 			throw new UnsupportedOperationException(
 					"synthesizeAnnotation() is unsupported in UntypedAnnotationDescriptor");
+		}
+
+		/**
+		 * Find the next {@link UntypedAnnotationDescriptor} for the specified
+		 * annotation types in the hierarchy above the
+		 * {@linkplain #getRootDeclaringClass() root declaring class} of this
+		 * descriptor.
+		 * <p>If one of the corresponding annotations is found in the superclass
+		 * hierarchy of the root declaring class, that will be returned. Otherwise,
+		 * an attempt will be made to find a corresponding annotation in the
+		 * {@linkplain Class#getEnclosingClass() enclosing class} hierarchy of
+		 * the root declaring class if
+		 * {@linkplain MetaAnnotationUtils#searchEnclosingClass appropriate}.
+		 * @return the next corresponding annotation descriptor if one of the
+		 * annotations was found; otherwise {@code null}
+		 * @since 5.3
+		 * @see AnnotationDescriptor#next()
+		 */
+		@Override
+		@Nullable
+		public UntypedAnnotationDescriptor next() {
+			if (ObjectUtils.isEmpty(this.annotationTypes)) {
+				throw new UnsupportedOperationException(
+						"next() is unsupported if UntypedAnnotationDescriptor is instantiated without 'annotationTypes'");
+			}
+
+			// Declared on a superclass?
+			UntypedAnnotationDescriptor descriptor =
+					findAnnotationDescriptorForTypes(getRootDeclaringClass().getSuperclass(), this.annotationTypes);
+			// Declared on an enclosing class of an inner class?
+			if (descriptor == null && searchEnclosingClass(getRootDeclaringClass())) {
+				descriptor = findAnnotationDescriptorForTypes(getRootDeclaringClass().getEnclosingClass(), this.annotationTypes);
+			}
+			return descriptor;
 		}
 	}
 

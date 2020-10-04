@@ -34,7 +34,6 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 import static org.springframework.test.util.MetaAnnotationUtils.findAnnotationDescriptor;
-import static org.springframework.test.util.MetaAnnotationUtils.searchEnclosingClass;
 
 /**
  * Utility methods for working with {@link ActiveProfiles @ActiveProfiles} and
@@ -113,18 +112,7 @@ abstract class ActiveProfilesUtils {
 				profileArrays.add(profiles);
 			}
 
-			if (annotation.inheritProfiles()) {
-				// Declared on a superclass?
-				descriptor = findAnnotationDescriptor(rootDeclaringClass.getSuperclass(), annotationType);
-
-				// Declared on an enclosing class of an inner class?
-				if (descriptor == null && searchEnclosingClass(rootDeclaringClass)) {
-					descriptor = findAnnotationDescriptor(rootDeclaringClass.getEnclosingClass(), annotationType);
-				}
-			}
-			else {
-				descriptor = null;
-			}
+			descriptor = (annotation.inheritProfiles() ? descriptor.next() : null);
 		}
 
 		// Reverse the list so that we can traverse "down" the hierarchy.

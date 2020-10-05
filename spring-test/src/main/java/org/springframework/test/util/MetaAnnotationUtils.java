@@ -298,7 +298,7 @@ public abstract class MetaAnnotationUtils {
 	 * @see ClassUtils#isInnerClass(Class)
 	 * @see #getSearchStrategy(Class)
 	 */
-	private static boolean searchEnclosingClass(Class<?> clazz) {
+	public static boolean searchEnclosingClass(Class<?> clazz) {
 		return (ClassUtils.isInnerClass(clazz) &&
 				getSearchStrategy(clazz) == SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES);
 	}

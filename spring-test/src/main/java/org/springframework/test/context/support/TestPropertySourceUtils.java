@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -42,7 +43,9 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.ResourcePropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.util.TestContextResourceUtils;
+import org.springframework.test.util.MetaAnnotationUtils;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
@@ -71,7 +74,7 @@ public abstract class TestPropertySourceUtils {
 
 
 	static MergedTestPropertySources buildMergedTestPropertySources(Class<?> testClass) {
-		MergedAnnotations mergedAnnotations = MergedAnnotations.from(testClass, SearchStrategy.TYPE_HIERARCHY);
+		MergedAnnotations mergedAnnotations = MergedAnnotations.from(testClass, SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES);
 		return (mergedAnnotations.isPresent(TestPropertySource.class) ? mergeTestPropertySources(mergedAnnotations) :
 				MergedTestPropertySources.empty());
 	}
@@ -85,9 +88,46 @@ public abstract class TestPropertySourceUtils {
 			MergedAnnotations mergedAnnotations) {
 
 		List<TestPropertySourceAttributes> attributesList = new ArrayList<>();
-		mergedAnnotations.stream(TestPropertySource.class)
-				.forEach(annotation -> addOrMergeTestPropertySourceAttributes(attributesList, annotation));
+		List<MergedAnnotation<TestPropertySource>> mergedAnnotationsList =
+				mergedAnnotations.stream(TestPropertySource.class).collect(Collectors.toList());
+		Class<?> lastClass = null;
+		for (MergedAnnotation<TestPropertySource> current : mergedAnnotationsList) {
+			boolean isRootDeclaringClass = (lastClass == null || current.getAggregateIndex() == 0);
+			// Always process annotations present on the "root declaring class".
+			if (isRootDeclaringClass) {
+				addOrMergeTestPropertySourceAttributes(attributesList, current);
+			}
+			// Process if the last class (i.e., the child of the current class)
+			// is a top-level class or a static nested class, OR if the last
+			// class is an inner class that is configured to inherit enclosing
+			// class configuration.
+			else if (!ClassUtils.isInnerClass(lastClass) || MetaAnnotationUtils.searchEnclosingClass(lastClass)) {
+				// We must further exclude configuration on the enclosing class of
+				// a nested interface, since we only support inheritance of
+				// configuration for nested classes.
+				if (!isNestedInterface(lastClass)) {
+					addOrMergeTestPropertySourceAttributes(attributesList, current);
+				}
+			}
+			// Otherwise, the last class is an inner class that is configured to
+			// override enclosing class configuration (either implicitly or
+			// explicitly), and we stop traversing up the hierarchy at this point.
+			else {
+				break;
+			}
+			lastClass = declaringClass(current);
+		}
 		return attributesList;
+	}
+
+	private static boolean isNestedInterface(Class<?> clazz) {
+		return (clazz.isMemberClass() && clazz.isInterface());
+	}
+
+	private static Class<?> declaringClass(MergedAnnotation<?> mergedAnnotation) {
+		Object source = mergedAnnotation.getSource();
+		Assert.state(source instanceof Class, "No source class available");
+		return (Class<?>) source;
 	}
 
 	private static void addOrMergeTestPropertySourceAttributes(List<TestPropertySourceAttributes> attributesList,

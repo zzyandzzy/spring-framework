@@ -275,7 +275,7 @@ public abstract class MetaAnnotationUtils {
 		return cachedSearchStrategies.get(clazz);
 	}
 
-	private static SearchStrategy lookUpSearchStrategy(Class<?> clazz) {
+	public static SearchStrategy lookUpSearchStrategy(Class<?> clazz) {
 		EnclosingConfiguration enclosingConfiguration =
 			MergedAnnotations.from(clazz, SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES)
 				.stream(NestedTestConfiguration.class)

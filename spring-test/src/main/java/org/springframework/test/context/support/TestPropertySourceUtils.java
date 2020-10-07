@@ -74,17 +74,40 @@ public abstract class TestPropertySourceUtils {
 
 
 	static MergedTestPropertySources buildMergedTestPropertySources(Class<?> testClass) {
-		MergedAnnotations mergedAnnotations = MergedAnnotations.from(testClass, SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES);
-		return (mergedAnnotations.isPresent(TestPropertySource.class) ? mergeTestPropertySources(mergedAnnotations) :
+		SearchStrategy searchStrategy = MetaAnnotationUtils.lookUpSearchStrategy(testClass);
+		MergedAnnotations mergedAnnotations = MergedAnnotations.from(testClass, searchStrategy);
+		return (mergedAnnotations.isPresent(TestPropertySource.class) ?
+				mergeTestPropertySources(mergedAnnotations, searchStrategy) :
 				MergedTestPropertySources.empty());
 	}
 
-	private static MergedTestPropertySources mergeTestPropertySources(MergedAnnotations mergedAnnotations) {
-		List<TestPropertySourceAttributes> attributesList = resolveTestPropertySourceAttributes(mergedAnnotations);
+	private static MergedTestPropertySources mergeTestPropertySources(
+				MergedAnnotations mergedAnnotations, SearchStrategy searchStrategy) {
+
+		List<TestPropertySourceAttributes> attributesList = resolveTestPropertySourceAttributes(mergedAnnotations, searchStrategy);
 		return new MergedTestPropertySources(mergeLocations(attributesList), mergeProperties(attributesList));
 	}
 
 	private static List<TestPropertySourceAttributes> resolveTestPropertySourceAttributes(
+			MergedAnnotations mergedAnnotations, SearchStrategy searchStrategy) {
+
+		if (searchStrategy == SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES) {
+			return resolveTestPropertySourceAttributesWithEnclosingClassStrategy(mergedAnnotations);
+		}
+		// else default semantics
+		return resolveTestPropertySourceAttributesWithTypeHierarchyStrategy(mergedAnnotations);
+	}
+
+	private static List<TestPropertySourceAttributes> resolveTestPropertySourceAttributesWithTypeHierarchyStrategy(
+			MergedAnnotations mergedAnnotations) {
+
+		List<TestPropertySourceAttributes> attributesList = new ArrayList<>();
+		mergedAnnotations.stream(TestPropertySource.class)
+			.forEach(annotation -> addOrMergeTestPropertySourceAttributes(attributesList, annotation));
+		return attributesList;
+	}
+
+	private static List<TestPropertySourceAttributes> resolveTestPropertySourceAttributesWithEnclosingClassStrategy(
 			MergedAnnotations mergedAnnotations) {
 
 		List<TestPropertySourceAttributes> attributesList = new ArrayList<>();

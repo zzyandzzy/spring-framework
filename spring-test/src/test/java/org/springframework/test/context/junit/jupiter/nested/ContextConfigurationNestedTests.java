@@ -23,11 +23,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.NestedTestConfiguration;
 import org.springframework.test.context.junit.SpringJUnitJupiterTestSuite;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import org.springframework.test.context.junit.jupiter.nested.BasicNestedTests.TopLevelConfig;
+import org.springframework.test.context.junit.jupiter.nested.ContextConfigurationNestedTests.TopLevelConfig;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.context.NestedTestConfiguration.EnclosingConfiguration.INHERIT;
@@ -46,10 +47,11 @@ import static org.springframework.test.context.NestedTestConfiguration.Enclosing
  * @see org.springframework.test.context.junit4.nested.NestedTestsWithSpringRulesTests
  */
 @SpringJUnitConfig(TopLevelConfig.class)
-class BasicNestedTests {
+class ContextConfigurationNestedTests {
 
 	private static final String FOO = "foo";
 	private static final String BAR = "bar";
+	private static final String BAZ = "baz";
 
 	@Autowired
 	String foo;
@@ -150,6 +152,30 @@ class BasicNestedTests {
 					assertThat(this.bar).isEqualTo(BAR);
 				}
 			}
+
+			@Nested
+			@NestedTestConfiguration(INHERIT)
+			class TripleNestedWithInheritedConfigAndTestInterfaceTests implements TestInterface {
+
+				@Autowired(required = false)
+				@Qualifier("foo")
+				String localFoo;
+
+				@Autowired
+				String bar;
+
+				@Autowired
+				String baz;
+
+
+				@Test
+				void test() {
+					assertThat(foo).isEqualTo(FOO);
+					assertThat(this.localFoo).as("foo bean should not be present").isNull();
+					assertThat(this.bar).isEqualTo(BAR);
+					assertThat(this.baz).isEqualTo(BAZ);
+				}
+			}
 		}
 	}
 
@@ -171,6 +197,19 @@ class BasicNestedTests {
 		String bar() {
 			return BAR;
 		}
+	}
+
+	@Configuration
+	static class TestInterfaceConfig {
+
+		@Bean
+		String baz() {
+			return BAZ;
+		}
+	}
+
+	@ContextConfiguration(classes = TestInterfaceConfig.class)
+	interface TestInterface {
 	}
 
 }

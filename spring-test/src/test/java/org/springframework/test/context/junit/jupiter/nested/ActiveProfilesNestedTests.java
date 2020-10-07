@@ -54,7 +54,7 @@ class ActiveProfilesNestedTests {
 
 	@Test
 	void test() {
-		assertThat(this.strings).containsExactly("X", "A1");
+		assertThat(this.strings).containsExactlyInAnyOrder("X", "A1");
 	}
 
 
@@ -68,8 +68,8 @@ class ActiveProfilesNestedTests {
 
 		@Test
 		void test() {
-			assertThat(strings).containsExactly("X", "A1");
-			assertThat(this.localStrings).containsExactly("X", "A1");
+			assertThat(strings).containsExactlyInAnyOrder("X", "A1");
+			assertThat(this.localStrings).containsExactlyInAnyOrder("X", "A1");
 		}
 	}
 
@@ -84,8 +84,8 @@ class ActiveProfilesNestedTests {
 
 		@Test
 		void test() {
-			assertThat(strings).containsExactly("X", "A1");
-			assertThat(this.localStrings).containsExactly("Y", "A2");
+			assertThat(strings).containsExactlyInAnyOrder("X", "A1");
+			assertThat(this.localStrings).containsExactlyInAnyOrder("Y", "A2");
 		}
 	}
 
@@ -101,14 +101,14 @@ class ActiveProfilesNestedTests {
 
 		@Test
 		void test() {
-			assertThat(strings).containsExactly("X", "A1");
-			assertThat(this.localStrings).containsExactly("X", "A1", "Y", "A2");
+			assertThat(strings).containsExactlyInAnyOrder("X", "A1");
+			assertThat(this.localStrings).containsExactlyInAnyOrder("X", "A1", "Y", "A2");
 		}
 
 
 		@Nested
 		@NestedTestConfiguration(OVERRIDE)
-		@SpringJUnitConfig({ Config2.class, Config3.class })
+		@SpringJUnitConfig({ Config1.class, Config2.class, Config3.class })
 		@ActiveProfiles("3")
 		class DoubleNestedWithOverriddenConfigTests {
 
@@ -118,8 +118,8 @@ class ActiveProfilesNestedTests {
 
 			@Test
 			void test() {
-				assertThat(strings).containsExactly("X", "A1");
-				assertThat(this.localStrings).containsExactly("Y", "Z", "A3");
+				assertThat(strings).containsExactlyInAnyOrder("X", "A1");
+				assertThat(this.localStrings).containsExactlyInAnyOrder("X", "Y", "Z", "A3");
 			}
 
 
@@ -134,8 +134,23 @@ class ActiveProfilesNestedTests {
 
 				@Test
 				void test() {
-					assertThat(strings).containsExactly("X", "A1");
-					assertThat(this.localStrings).containsExactly("Y", "A2", "Z");
+					assertThat(strings).containsExactlyInAnyOrder("X", "A1");
+					assertThat(this.localStrings).containsExactlyInAnyOrder("X", "Y", "Z", "A2");
+				}
+			}
+
+			@Nested
+			@NestedTestConfiguration(INHERIT)
+			class TripleNestedWithInheritedConfigAndTestInterfaceTests implements TestInterface {
+
+				@Autowired
+				List<String> localStrings;
+
+
+				@Test
+				void test() {
+					assertThat(strings).containsExactlyInAnyOrder("X", "A1");
+					assertThat(this.localStrings).containsExactlyInAnyOrder("X", "Y", "Z", "A2", "A3");
 				}
 			}
 		}
@@ -187,6 +202,10 @@ class ActiveProfilesNestedTests {
 		String a3() {
 			return "A3";
 		}
+	}
+
+	@ActiveProfiles("2")
+	interface TestInterface {
 	}
 
 }

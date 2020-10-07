@@ -21,17 +21,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.ContextHierarchy;
 import org.springframework.test.context.NestedTestConfiguration;
-import org.springframework.test.context.NestedTestConfiguration.EnclosingConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit.jupiter.nested.ContextHierarchyNestedTests.ParentConfig;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.context.NestedTestConfiguration.EnclosingConfiguration.INHERIT;
+import static org.springframework.test.context.NestedTestConfiguration.EnclosingConfiguration.OVERRIDE;
 
 /**
  * Integration tests that verify support for {@code @Nested} test classes using
@@ -42,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @since 5.3
  */
 @ExtendWith(SpringExtension.class)
-@ContextHierarchy({ @ContextConfiguration(classes = ParentConfig.class) })
+@ContextHierarchy(@ContextConfiguration(classes = ParentConfig.class))
 class ContextHierarchyNestedTests {
 
 	private static final String FOO = "foo";
@@ -90,7 +92,7 @@ class ContextHierarchyNestedTests {
 	}
 
 	@Nested
-	@NestedTestConfiguration(EnclosingConfiguration.INHERIT)
+	@NestedTestConfiguration(INHERIT)
 	@ContextConfiguration(classes = Child1Config.class)
 	class NestedTestCaseWithInheritedConfigTests {
 
@@ -115,12 +117,12 @@ class ContextHierarchyNestedTests {
 		}
 
 		@Nested
-		@NestedTestConfiguration(EnclosingConfiguration.OVERRIDE)
+		@NestedTestConfiguration(OVERRIDE)
 		@ContextHierarchy({
 			@ContextConfiguration(classes = ParentConfig.class),
 			@ContextConfiguration(classes = Child2Config.class)
 		})
-		class DoublyNestedTestCaseWithOverriddenConfigTests {
+		class DoubleNestedTestCaseWithOverriddenConfigTests {
 
 			@Autowired
 			String bar;
@@ -137,6 +139,34 @@ class ContextHierarchyNestedTests {
 				assertThat(foo).isEqualTo(FOO);
 				assertThat(this.bar).isEqualTo(BAZ + 2);
 				assertThat(this.context.getBean("foo", String.class)).as("child foo").isEqualTo(QUX + 2);
+			}
+
+			@Nested
+			@NestedTestConfiguration(INHERIT)
+			class TripleNestedWithInheritedConfigAndTestInterfaceTests implements TestInterface {
+
+				@Autowired
+				@Qualifier("foo")
+				String localFoo;
+
+				@Autowired
+				String bar;
+
+				@Autowired
+				ApplicationContext context;
+
+
+				@Test
+				void nestedTest() throws Exception {
+					assertThat(this.context).as("local ApplicationContext").isNotNull();
+					assertThat(this.context.getParent()).as("parent ApplicationContext").isNotNull();
+					assertThat(this.context.getParent().getParent()).as("grandparent ApplicationContext").isNotNull();
+
+					assertThat(foo).isEqualTo(FOO);
+					assertThat(this.localFoo).isEqualTo("test interface");
+					assertThat(this.bar).isEqualTo(BAZ + 2);
+					assertThat(this.context.getParent().getBean("foo", String.class)).as("child foo").isEqualTo(QUX + 2);
+				}
 			}
 		}
 	}
@@ -187,6 +217,19 @@ class ContextHierarchyNestedTests {
 		String bar() {
 			return BAR;
 		}
+	}
+
+	@Configuration
+	static class TestInterfaceConfig {
+
+		@Bean
+		String foo() {
+			return "test interface";
+		}
+	}
+
+	@ContextConfiguration(classes = TestInterfaceConfig.class)
+	interface TestInterface {
 	}
 
 }

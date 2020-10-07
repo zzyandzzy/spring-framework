@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,17 @@
 
 package org.springframework.test.context;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.util.Comparator;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeanUtils;
-import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.annotation.MergedAnnotation;
+import org.springframework.core.annotation.MergedAnnotationCollectors;
 import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
 import org.springframework.core.annotation.RepeatableContainers;
@@ -152,7 +155,12 @@ abstract class BootstrapUtils {
 
 	@Nullable
 	private static Class<?> resolveExplicitTestContextBootstrapper(Class<?> testClass) {
-		Set<BootstrapWith> annotations = AnnotatedElementUtils.findAllMergedAnnotations(testClass, BootstrapWith.class);
+		SearchStrategy searchStrategy = MetaAnnotationUtils.lookUpSearchStrategy(testClass);
+		Set<BootstrapWith> annotations = MergedAnnotations.from(testClass, searchStrategy, RepeatableContainers.none())
+				.stream(BootstrapWith.class)
+				.sorted(highAggregateIndexesFirst())
+				.collect(MergedAnnotationCollectors.toAnnotationSet());
+
 		if (annotations.isEmpty()) {
 			return null;
 		}
@@ -169,6 +177,10 @@ abstract class BootstrapUtils {
 		throw new IllegalStateException(String.format(
 				"Configuration error: found multiple declarations of @BootstrapWith for test class [%s]: %s",
 				testClass.getName(), annotations));
+	}
+
+	private static <A extends Annotation> Comparator<MergedAnnotation<A>> highAggregateIndexesFirst() {
+		return Comparator.<MergedAnnotation<A>> comparingInt(MergedAnnotation::getAggregateIndex).reversed();
 	}
 
 	private static Class<?> resolveDefaultTestContextBootstrapper(Class<?> testClass) throws Exception {

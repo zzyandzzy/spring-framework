@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,28 @@ package org.springframework.test.context;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import org.springframework.test.context.BootstrapUtilsTests.OuterClass.NestedWithInheritedBootstrapper;
+import org.springframework.test.context.BootstrapUtilsTests.OuterClass.NestedWithInheritedBootstrapper.DoubleNestedWithInheritedButOverriddenBootstrapper;
+import org.springframework.test.context.BootstrapUtilsTests.OuterClass.NestedWithInheritedBootstrapper.DoubleNestedWithOverriddenBootstrapper;
+import org.springframework.test.context.BootstrapUtilsTests.OuterClass.NestedWithInheritedBootstrapper.DoubleNestedWithOverriddenBootstrapper.TripleNestedWithInheritedBootstrapper;
 import org.springframework.test.context.support.DefaultTestContextBootstrapper;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.context.web.WebTestContextBootstrapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.mock;
 import static org.springframework.test.context.BootstrapUtils.resolveTestContextBootstrapper;
+import static org.springframework.test.context.NestedTestConfiguration.EnclosingConfiguration.INHERIT;
+import static org.springframework.test.context.NestedTestConfiguration.EnclosingConfiguration.OVERRIDE;
 
 /**
  * Unit tests for {@link BootstrapUtils}.
@@ -88,6 +99,26 @@ class BootstrapUtilsTests {
 	@Test
 	void resolveTestContextBootstrapperWithDuplicatingMetaBootstrapWithAnnotations() {
 		assertBootstrapper(DuplicateMetaAnnotatedBootstrapWithAnnotationClass.class, FooBootstrapper.class);
+	}
+
+	/**
+	 * @since 5.3
+	 */
+	@ParameterizedTest(name = "{1}")
+	@MethodSource
+	void resolveTestContextBootstrapperInEnclosingClassHierarchy(Class<?> testClass, String name, Class<?> bootstrapper) {
+		assertBootstrapper(testClass, bootstrapper);
+	}
+
+	static Stream<Arguments> resolveTestContextBootstrapperInEnclosingClassHierarchy() {
+		return Stream.of(//
+			arguments(OuterClass.class, OuterClass.class.getSimpleName(), FooBootstrapper.class),//
+			arguments(NestedWithInheritedBootstrapper.class, NestedWithInheritedBootstrapper.class.getSimpleName(), FooBootstrapper.class),//
+			arguments(DoubleNestedWithInheritedButOverriddenBootstrapper.class, DoubleNestedWithInheritedButOverriddenBootstrapper.class.getSimpleName(), EnigmaBootstrapper.class),//
+			arguments(DoubleNestedWithOverriddenBootstrapper.class, DoubleNestedWithOverriddenBootstrapper.class.getSimpleName(), BarBootstrapper.class)//
+			// TODO Fix bug and include the following.
+			// arguments(TripleNestedWithInheritedBootstrapper.class, TripleNestedWithInheritedBootstrapper.class.getSimpleName(), BarBootstrapper.class)//
+		);
 	}
 
 	/**
@@ -155,5 +186,27 @@ class BootstrapUtilsTests {
 
 	@WebAppConfiguration
 	static class WebAppConfigurationAnnotatedClass {}
+
+	@BootWithFoo
+	static class OuterClass {
+
+		@NestedTestConfiguration(INHERIT)
+		class NestedWithInheritedBootstrapper {
+
+			@NestedTestConfiguration(INHERIT)
+			@BootstrapWith(EnigmaBootstrapper.class)
+			class DoubleNestedWithInheritedButOverriddenBootstrapper {
+			}
+
+			@NestedTestConfiguration(OVERRIDE)
+			@BootWithBar
+			class DoubleNestedWithOverriddenBootstrapper {
+
+				@NestedTestConfiguration(INHERIT)
+				class TripleNestedWithInheritedBootstrapper {
+				}
+			}
+		}
+	}
 
 }

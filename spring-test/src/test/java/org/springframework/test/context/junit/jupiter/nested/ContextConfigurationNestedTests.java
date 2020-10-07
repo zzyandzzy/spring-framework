@@ -25,7 +25,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.NestedTestConfiguration;
-import org.springframework.test.context.junit.SpringJUnitJupiterTestSuite;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.context.junit.jupiter.nested.ContextConfigurationNestedTests.TopLevelConfig;
@@ -35,11 +34,9 @@ import static org.springframework.test.context.NestedTestConfiguration.Enclosing
 import static org.springframework.test.context.NestedTestConfiguration.EnclosingConfiguration.OVERRIDE;
 
 /**
- * Integration tests that verify support for {@code @Nested} test classes
- * in conjunction with the {@link SpringExtension} in a JUnit Jupiter environment.
- *
- * <p>To run these tests in an IDE that does not have built-in support for the JUnit
- * Platform, simply run {@link SpringJUnitJupiterTestSuite} as a JUnit 4 test.
+ * Integration tests that verify support for {@code @Nested} test classes using
+ * {@link ContextConfiguration @ContextConfiguration} in conjunction with the
+ * {@link SpringExtension} in a JUnit Jupiter environment.
  *
  * @author Sam Brannen
  * @since 5.0

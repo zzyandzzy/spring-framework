@@ -24,8 +24,11 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.core.annotation.AnnotationAttributes;
+import org.springframework.core.annotation.MergedAnnotations;
+import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
+import org.springframework.core.annotation.RepeatableContainers;
 import org.springframework.lang.Nullable;
+import org.springframework.test.util.MetaAnnotationUtils;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -169,10 +172,11 @@ abstract class BootstrapUtils {
 	}
 
 	private static Class<?> resolveDefaultTestContextBootstrapper(Class<?> testClass) throws Exception {
+		SearchStrategy searchStrategy = MetaAnnotationUtils.lookUpSearchStrategy(testClass);
+		boolean webApp = MergedAnnotations.from(testClass, searchStrategy, RepeatableContainers.none())
+				.isPresent(WEB_APP_CONFIGURATION_ANNOTATION_CLASS_NAME);
 		ClassLoader classLoader = BootstrapUtils.class.getClassLoader();
-		AnnotationAttributes attributes = AnnotatedElementUtils.findMergedAnnotationAttributes(testClass,
-			WEB_APP_CONFIGURATION_ANNOTATION_CLASS_NAME, false, false);
-		if (attributes != null) {
+		if (webApp) {
 			return ClassUtils.forName(DEFAULT_WEB_TEST_CONTEXT_BOOTSTRAPPER_CLASS_NAME, classLoader);
 		}
 		return ClassUtils.forName(DEFAULT_TEST_CONTEXT_BOOTSTRAPPER_CLASS_NAME, classLoader);

@@ -71,24 +71,21 @@ abstract class ActiveProfilesUtils {
 	static String[] resolveActiveProfiles(Class<?> testClass) {
 		Assert.notNull(testClass, "Class must not be null");
 
-		final List<String[]> profileArrays = new ArrayList<>();
-
-		Class<ActiveProfiles> annotationType = ActiveProfiles.class;
-		AnnotationDescriptor<ActiveProfiles> descriptor = findAnnotationDescriptor(testClass, annotationType);
+		List<String[]> profileArrays = new ArrayList<>();
+		AnnotationDescriptor<ActiveProfiles> descriptor = findAnnotationDescriptor(testClass, ActiveProfiles.class);
 		if (descriptor == null && logger.isDebugEnabled()) {
 			logger.debug(String.format(
 					"Could not find an 'annotation declaring class' for annotation type [%s] and class [%s]",
-					annotationType.getName(), testClass.getName()));
+					ActiveProfiles.class.getName(), testClass.getName()));
 		}
 
 		while (descriptor != null) {
 			Class<?> rootDeclaringClass = descriptor.getRootDeclaringClass();
-			Class<?> declaringClass = descriptor.getDeclaringClass();
 			ActiveProfiles annotation = descriptor.synthesizeAnnotation();
 
 			if (logger.isTraceEnabled()) {
 				logger.trace(String.format("Retrieved @ActiveProfiles [%s] for declaring class [%s]",
-						annotation, declaringClass.getName()));
+						annotation, descriptor.getDeclaringClass().getName()));
 			}
 
 			Class<? extends ActiveProfilesResolver> resolverClass = annotation.resolver();
@@ -118,7 +115,7 @@ abstract class ActiveProfilesUtils {
 		// Reverse the list so that we can traverse "down" the hierarchy.
 		Collections.reverse(profileArrays);
 
-		final Set<String> activeProfiles = new LinkedHashSet<>();
+		Set<String> activeProfiles = new LinkedHashSet<>();
 		for (String[] profiles : profileArrays) {
 			for (String profile : profiles) {
 				if (StringUtils.hasText(profile)) {

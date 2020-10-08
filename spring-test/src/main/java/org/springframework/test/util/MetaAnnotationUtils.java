@@ -551,8 +551,7 @@ public abstract class MetaAnnotationUtils {
 
 		/**
 		 * Throws an {@link UnsupportedOperationException} since the type of annotation
-		 * represented by the {@link #getAnnotationAttributes AnnotationAttributes} in
-		 * an {@code UntypedAnnotationDescriptor} is unknown.
+		 * represented by an {@code UntypedAnnotationDescriptor} is unknown.
 		 * @since 4.2
 		 */
 		@Override
@@ -594,6 +593,18 @@ public abstract class MetaAnnotationUtils {
 			}
 			return descriptor;
 		}
+
+		/**
+		 * Throws an {@link UnsupportedOperationException} since the type of annotation
+		 * represented by an {@code UntypedAnnotationDescriptor} is unknown.
+		 * @since 5.3
+		 */
+		@Override
+		public Set<Annotation> findAllLocalMergedAnnotations() {
+			throw new UnsupportedOperationException(
+					"findAllLocalMergedAnnotations() is unsupported in UntypedAnnotationDescriptor");
+		}
+
 	}
 
 }

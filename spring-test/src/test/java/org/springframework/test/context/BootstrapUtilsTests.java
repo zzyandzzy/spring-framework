@@ -29,6 +29,7 @@ import org.springframework.test.context.BootstrapUtilsTests.OuterClass.NestedWit
 import org.springframework.test.context.BootstrapUtilsTests.OuterClass.NestedWithInheritedBootstrapper.DoubleNestedWithInheritedButOverriddenBootstrapper;
 import org.springframework.test.context.BootstrapUtilsTests.OuterClass.NestedWithInheritedBootstrapper.DoubleNestedWithOverriddenBootstrapper;
 import org.springframework.test.context.BootstrapUtilsTests.OuterClass.NestedWithInheritedBootstrapper.DoubleNestedWithOverriddenBootstrapper.TripleNestedWithInheritedBootstrapper;
+import org.springframework.test.context.BootstrapUtilsTests.OuterClass.NestedWithInheritedBootstrapper.DoubleNestedWithOverriddenBootstrapper.TripleNestedWithInheritedBootstrapperButLocalOverride;
 import org.springframework.test.context.support.DefaultTestContextBootstrapper;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.context.web.WebTestContextBootstrapper;
@@ -104,21 +105,25 @@ class BootstrapUtilsTests {
 	/**
 	 * @since 5.3
 	 */
-	@ParameterizedTest(name = "{1}")
+	@ParameterizedTest(name = "{0}")
 	@MethodSource
-	void resolveTestContextBootstrapperInEnclosingClassHierarchy(Class<?> testClass, String name, Class<?> bootstrapper) {
-		assertBootstrapper(testClass, bootstrapper);
+	void resolveTestContextBootstrapperInEnclosingClassHierarchy(String name, Class<?> testClass, Class<?> expectedBootstrapper) {
+		assertBootstrapper(testClass, expectedBootstrapper);
 	}
 
 	static Stream<Arguments> resolveTestContextBootstrapperInEnclosingClassHierarchy() {
 		return Stream.of(//
-			arguments(OuterClass.class, OuterClass.class.getSimpleName(), FooBootstrapper.class),//
-			arguments(NestedWithInheritedBootstrapper.class, NestedWithInheritedBootstrapper.class.getSimpleName(), FooBootstrapper.class),//
-			arguments(DoubleNestedWithInheritedButOverriddenBootstrapper.class, DoubleNestedWithInheritedButOverriddenBootstrapper.class.getSimpleName(), EnigmaBootstrapper.class),//
-			arguments(DoubleNestedWithOverriddenBootstrapper.class, DoubleNestedWithOverriddenBootstrapper.class.getSimpleName(), BarBootstrapper.class)//
-			// TODO Fix bug and include the following.
-			// arguments(TripleNestedWithInheritedBootstrapper.class, TripleNestedWithInheritedBootstrapper.class.getSimpleName(), BarBootstrapper.class)//
+			args(OuterClass.class, FooBootstrapper.class),//
+			args(NestedWithInheritedBootstrapper.class, FooBootstrapper.class),//
+			args(DoubleNestedWithInheritedButOverriddenBootstrapper.class, EnigmaBootstrapper.class),//
+			args(DoubleNestedWithOverriddenBootstrapper.class, BarBootstrapper.class),//
+			args(TripleNestedWithInheritedBootstrapper.class, BarBootstrapper.class),//
+			args(TripleNestedWithInheritedBootstrapperButLocalOverride.class, EnigmaBootstrapper.class)//
 		);
+	}
+
+	private static Arguments args(Class<?> testClass, Class<? extends TestContextBootstrapper> expectedBootstrapper) {
+		return arguments(testClass.getSimpleName(), testClass, expectedBootstrapper);
 	}
 
 	/**
@@ -204,6 +209,11 @@ class BootstrapUtilsTests {
 
 				@NestedTestConfiguration(INHERIT)
 				class TripleNestedWithInheritedBootstrapper {
+				}
+
+				@NestedTestConfiguration(INHERIT)
+				@BootstrapWith(EnigmaBootstrapper.class)
+				class TripleNestedWithInheritedBootstrapperButLocalOverride {
 				}
 			}
 		}

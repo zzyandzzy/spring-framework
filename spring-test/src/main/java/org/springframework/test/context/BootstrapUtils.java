@@ -16,22 +16,20 @@
 
 package org.springframework.test.context;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
-import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeanUtils;
-import org.springframework.core.annotation.MergedAnnotation;
-import org.springframework.core.annotation.MergedAnnotationCollectors;
 import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
 import org.springframework.core.annotation.RepeatableContainers;
 import org.springframework.lang.Nullable;
 import org.springframework.test.util.MetaAnnotationUtils;
+import org.springframework.test.util.MetaAnnotationUtils.AnnotationDescriptor;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -155,11 +153,13 @@ abstract class BootstrapUtils {
 
 	@Nullable
 	private static Class<?> resolveExplicitTestContextBootstrapper(Class<?> testClass) {
-		SearchStrategy searchStrategy = MetaAnnotationUtils.lookUpSearchStrategy(testClass);
-		Set<BootstrapWith> annotations = MergedAnnotations.from(testClass, searchStrategy, RepeatableContainers.none())
-				.stream(BootstrapWith.class)
-				.sorted(highAggregateIndexesFirst())
-				.collect(MergedAnnotationCollectors.toAnnotationSet());
+		Set<BootstrapWith> annotations = new LinkedHashSet<>();
+		AnnotationDescriptor<BootstrapWith> descriptor =
+				MetaAnnotationUtils.findAnnotationDescriptor(testClass, BootstrapWith.class);
+		while (descriptor != null) {
+			annotations.addAll(descriptor.findAllLocalMergedAnnotations());
+			descriptor = descriptor.next();
+		}
 
 		if (annotations.isEmpty()) {
 			return null;
@@ -177,10 +177,6 @@ abstract class BootstrapUtils {
 		throw new IllegalStateException(String.format(
 				"Configuration error: found multiple declarations of @BootstrapWith for test class [%s]: %s",
 				testClass.getName(), annotations));
-	}
-
-	private static <A extends Annotation> Comparator<MergedAnnotation<A>> highAggregateIndexesFirst() {
-		return Comparator.<MergedAnnotation<A>> comparingInt(MergedAnnotation::getAggregateIndex).reversed();
 	}
 
 	private static Class<?> resolveDefaultTestContextBootstrapper(Class<?> testClass) throws Exception {

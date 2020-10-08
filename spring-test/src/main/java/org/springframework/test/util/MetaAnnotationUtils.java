@@ -23,8 +23,12 @@ import java.util.Set;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.annotation.MergedAnnotation;
+import org.springframework.core.annotation.MergedAnnotationCollectors;
+import org.springframework.core.annotation.MergedAnnotationPredicates;
 import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
+import org.springframework.core.annotation.RepeatableContainers;
 import org.springframework.core.style.ToStringCreator;
 import org.springframework.lang.Nullable;
 import org.springframework.test.context.NestedTestConfiguration;
@@ -463,6 +467,25 @@ public abstract class MetaAnnotationUtils {
 				descriptor = findAnnotationDescriptor(getRootDeclaringClass().getEnclosingClass(), annotationType);
 			}
 			return descriptor;
+		}
+
+		/**
+		 * Find <strong>all</strong> annotations of the specified
+		 * {@linkplain #getAnnotationType() annotation type} that are present or
+		 * meta-present on the {@linkplain #getRootDeclaringClass() root declaring
+		 * class} of this descriptor.
+		 * @return the set of all merged, synthesized {@code Annotations} found,
+		 * or an empty set if none were found
+		 * @since 5.3
+		 */
+		@SuppressWarnings("unchecked")
+		public Set<T> findAllLocalMergedAnnotations() {
+			Class<T> annotationType = (Class<T>) getAnnotationType();
+			SearchStrategy searchStrategy = lookUpSearchStrategy(getRootDeclaringClass());
+			return MergedAnnotations.from(getRootDeclaringClass(), searchStrategy , RepeatableContainers.none())
+					.stream(annotationType)
+					.filter(MergedAnnotationPredicates.firstRunOf(MergedAnnotation::getAggregateIndex))
+					.collect(MergedAnnotationCollectors.toAnnotationSet());
 		}
 
 		/**

@@ -26,9 +26,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.test.annotation.Commit;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.NestedTestConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.TransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,12 +52,14 @@ import static org.springframework.transaction.annotation.Propagation.NOT_SUPPORT
  */
 @SpringJUnitConfig
 @Transactional
+@Commit
 class TransactionalNestedTests {
 
 	@Test
 	void transactional(@Autowired DataSource dataSource) {
 		assertThatTransaction().isActive();
 		assertThat(dataSource).isNotNull();
+		assertCommit();
 	}
 
 
@@ -77,6 +82,7 @@ class TransactionalNestedTests {
 		void transactional(@Autowired DataSource dataSource) {
 			assertThatTransaction().isActive();
 			assertThat(dataSource).isNotNull();
+			assertCommit();
 		}
 
 
@@ -87,16 +93,19 @@ class TransactionalNestedTests {
 			void transactional(@Autowired DataSource dataSource) {
 				assertThatTransaction().isActive();
 				assertThat(dataSource).isNotNull();
+				assertCommit();
 			}
 
 
 			@Nested
+			@Rollback
 			class TripleNestedWithImplicitlyInheritedConfigTests {
 
 				@Test
 				void transactional(@Autowired DataSource dataSource) {
 					assertThatTransaction().isActive();
 					assertThat(dataSource).isNotNull();
+					assertRollback();
 				}
 			}
 		}
@@ -105,23 +114,27 @@ class TransactionalNestedTests {
 		@NestedTestConfiguration(OVERRIDE)
 		@SpringJUnitConfig(Config.class)
 		@Transactional
+		@Rollback
 		class DoubleNestedWithOverriddenConfigTests {
 
 			@Test
 			void transactional(@Autowired DataSource dataSource) {
 				assertThatTransaction().isActive();
 				assertThat(dataSource).isNotNull();
+				assertRollback();
 			}
 
 
 			@Nested
 			@NestedTestConfiguration(INHERIT)
+			@Commit
 			class TripleNestedWithInheritedConfigTests {
 
 				@Test
 				void transactional(@Autowired DataSource dataSource) {
 					assertThatTransaction().isActive();
 					assertThat(dataSource).isNotNull();
+					assertCommit();
 				}
 			}
 
@@ -138,7 +151,17 @@ class TransactionalNestedTests {
 		}
 	}
 
+
+	private void assertCommit() {
+		assertThat(TestTransaction.isFlaggedForRollback()).as("flagged for commit").isFalse();
+	}
+
+	private void assertRollback() {
+		assertThat(TestTransaction.isFlaggedForRollback()).as("flagged for rollback").isTrue();
+	}
+
 	// -------------------------------------------------------------------------
+
 
 	@Configuration
 	@EnableTransactionManagement

@@ -43,12 +43,12 @@ import static org.springframework.test.context.NestedTestConfiguration.Enclosing
  * @see ConstructorInjectionNestedTests
  * @see org.springframework.test.context.junit4.nested.NestedTestsWithSpringRulesTests
  */
-@SpringJUnitConfig(Config.class)
+@SpringJUnitWebConfig(Config.class)
 class WebAppConfigurationNestedTests {
 
 	@Test
 	void test(ApplicationContext context) {
-		assertThat(context).isNotInstanceOf(WebApplicationContext.class);
+		assertThat(context).isInstanceOf(WebApplicationContext.class);
 	}
 
 
@@ -78,18 +78,27 @@ class WebAppConfigurationNestedTests {
 
 		@Test
 		void test(ApplicationContext context) {
-			assertThat(context).isNotInstanceOf(WebApplicationContext.class);
+			assertThat(context).isInstanceOf(WebApplicationContext.class);
 		}
 
 
 		@Nested
-		@NestedTestConfiguration(OVERRIDE)
-		@SpringJUnitWebConfig(Config.class)
-		class DoubleNestedWithOverriddenConfigWebTests {
+		class DoubleNestedWithImplicitlyInheritedConfigWebTests {
 
 			@Test
 			void test(ApplicationContext context) {
 				assertThat(context).isInstanceOf(WebApplicationContext.class);
+			}
+		}
+
+		@Nested
+		@NestedTestConfiguration(OVERRIDE)
+		@SpringJUnitConfig(Config.class)
+		class DoubleNestedWithOverriddenConfigWebTests {
+
+			@Test
+			void test(ApplicationContext context) {
+				assertThat(context).isNotInstanceOf(WebApplicationContext.class);
 			}
 
 
@@ -99,18 +108,18 @@ class WebAppConfigurationNestedTests {
 
 				@Test
 				void test(ApplicationContext context) {
-					assertThat(context).isInstanceOf(WebApplicationContext.class);
+					assertThat(context).isNotInstanceOf(WebApplicationContext.class);
 				}
 			}
-		}
 
-		@Nested
-		@NestedTestConfiguration(INHERIT)
-		class DoubleNestedWithInheritedConfigAndTestInterfaceTests implements TestInterface {
+			@Nested
+			@NestedTestConfiguration(INHERIT)
+			class TripleNestedWithInheritedConfigAndTestInterfaceTests implements TestInterface {
 
-			@Test
-			void test(ApplicationContext context) {
-				assertThat(context).isInstanceOf(WebApplicationContext.class);
+				@Test
+				void test(ApplicationContext context) {
+					assertThat(context).isInstanceOf(WebApplicationContext.class);
+				}
 			}
 		}
 	}

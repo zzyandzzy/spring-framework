@@ -16,9 +16,6 @@
 
 package org.springframework.test.context.web;
 
-import org.springframework.core.annotation.MergedAnnotation;
-import org.springframework.core.annotation.MergedAnnotations;
-import org.springframework.core.annotation.RepeatableContainers;
 import org.springframework.test.context.ContextLoader;
 import org.springframework.test.context.MergedContextConfiguration;
 import org.springframework.test.context.TestContextBootstrapper;
@@ -48,7 +45,7 @@ public class WebTestContextBootstrapper extends DefaultTestContextBootstrapper {
 	 */
 	@Override
 	protected Class<? extends ContextLoader> getDefaultContextLoaderClass(Class<?> testClass) {
-		if (getWebAppConfiguration(testClass).isPresent()) {
+		if (getWebAppConfiguration(testClass) != null) {
 			return WebDelegatingSmartContextLoader.class;
 		}
 		else {
@@ -64,18 +61,17 @@ public class WebTestContextBootstrapper extends DefaultTestContextBootstrapper {
 	 */
 	@Override
 	protected MergedContextConfiguration processMergedContextConfiguration(MergedContextConfiguration mergedConfig) {
-		MergedAnnotation<WebAppConfiguration> webAppConfiguration = getWebAppConfiguration(mergedConfig.getTestClass());
-		if (webAppConfiguration.isPresent()) {
-			return new WebMergedContextConfiguration(mergedConfig, webAppConfiguration.getString("value"));
+		WebAppConfiguration webAppConfiguration = getWebAppConfiguration(mergedConfig.getTestClass());
+		if (webAppConfiguration != null) {
+			return new WebMergedContextConfiguration(mergedConfig, webAppConfiguration.value());
 		}
 		else {
 			return mergedConfig;
 		}
 	}
 
-	private static MergedAnnotation<WebAppConfiguration> getWebAppConfiguration(Class<?> testClass) {
-		return MergedAnnotations.from(testClass, MetaAnnotationUtils.getSearchStrategy(testClass),
-				RepeatableContainers.none()).get(WebAppConfiguration.class);
+	private static WebAppConfiguration getWebAppConfiguration(Class<?> testClass) {
+		return MetaAnnotationUtils.findMergedAnnotation(testClass, WebAppConfiguration.class);
 	}
 
 }

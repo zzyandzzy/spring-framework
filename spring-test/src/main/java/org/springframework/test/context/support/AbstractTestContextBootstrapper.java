@@ -138,13 +138,11 @@ public abstract class AbstractTestContextBootstrapper implements TestContextBoot
 				}
 
 				boolean inheritListeners = testExecutionListeners.inheritListeners();
-				AnnotationDescriptor<TestExecutionListeners> superDescriptor =
-						MetaAnnotationUtils.findAnnotationDescriptor(
-								descriptor.getRootDeclaringClass().getSuperclass(), annotationType);
+				AnnotationDescriptor<TestExecutionListeners> parentDescriptor = descriptor.next();
 
 				// If there are no listeners to inherit, we might need to merge the
 				// locally declared listeners with the defaults.
-				if ((!inheritListeners || superDescriptor == null) &&
+				if ((!inheritListeners || parentDescriptor == null) &&
 						testExecutionListeners.mergeMode() == MergeMode.MERGE_WITH_DEFAULTS) {
 					if (logger.isDebugEnabled()) {
 						logger.debug(String.format("Merging default listeners with listeners configured via " +
@@ -156,7 +154,7 @@ public abstract class AbstractTestContextBootstrapper implements TestContextBoot
 
 				classesList.addAll(0, Arrays.asList(testExecutionListeners.listeners()));
 
-				descriptor = (inheritListeners ? superDescriptor : null);
+				descriptor = (inheritListeners ? parentDescriptor : null);
 			}
 		}
 

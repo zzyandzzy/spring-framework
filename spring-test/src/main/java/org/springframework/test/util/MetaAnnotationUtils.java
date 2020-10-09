@@ -73,6 +73,30 @@ public abstract class MetaAnnotationUtils {
 
 
 	/**
+	 * Find the first annotation of the specified {@code annotationType} within
+	 * the annotation hierarchy <em>above</em> the supplied class, merge that
+	 * annotation's attributes with <em>matching</em> attributes from annotations
+	 * in lower levels of the annotation hierarchy, and synthesize the result back
+	 * into an annotation of the specified {@code annotationType}.
+	 * <p>In the context of this method, the term "above" means within the
+	 * {@linkplain Class#getSuperclass() superclass} hierarchy or within the
+	 * {@linkplain Class#getEnclosingClass() enclosing class} hierarchy of the
+	 * supplied class. The enclosing class hierarchy will only be searched if
+	 * appropriate.
+	 * @param clazz the class to look for annotations on
+	 * @param annotationType the type of annotation to look for
+	 * @return the merged, synthesized {@code Annotation}, or {@code null} if not found
+	 * @since 5.3
+	 * @see AnnotatedElementUtils#findMergedAnnotation(java.lang.reflect.AnnotatedElement, Class)
+	 * @see #findAnnotationDescriptor(Class, Class)
+	 */
+	@Nullable
+	public static <T extends Annotation> T findMergedAnnotation(Class<?> clazz, Class<T> annotationType) {
+		AnnotationDescriptor<T> descriptor = findAnnotationDescriptor(clazz, annotationType);
+		return (descriptor != null ? descriptor.synthesizeAnnotation() : null);
+	}
+
+	/**
 	 * Find the {@link AnnotationDescriptor} for the supplied {@code annotationType}
 	 * on the supplied {@link Class}, traversing its annotations, interfaces, and
 	 * superclasses if no annotation can be found on the given class itself.

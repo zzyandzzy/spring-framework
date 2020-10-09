@@ -180,7 +180,7 @@ abstract class BootstrapUtils {
 	}
 
 	private static Class<?> resolveDefaultTestContextBootstrapper(Class<?> testClass) throws Exception {
-		SearchStrategy searchStrategy = MetaAnnotationUtils.lookUpSearchStrategy(testClass);
+		SearchStrategy searchStrategy = MetaAnnotationUtils.getSearchStrategy(testClass);
 		boolean webApp = MergedAnnotations.from(testClass, searchStrategy, RepeatableContainers.none())
 				.isPresent(WEB_APP_CONFIGURATION_ANNOTATION_CLASS_NAME);
 		ClassLoader classLoader = BootstrapUtils.class.getClassLoader();

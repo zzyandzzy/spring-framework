@@ -74,7 +74,7 @@ public abstract class TestPropertySourceUtils {
 
 
 	static MergedTestPropertySources buildMergedTestPropertySources(Class<?> testClass) {
-		SearchStrategy searchStrategy = MetaAnnotationUtils.lookUpSearchStrategy(testClass);
+		SearchStrategy searchStrategy = MetaAnnotationUtils.getSearchStrategy(testClass);
 		MergedAnnotations mergedAnnotations = MergedAnnotations.from(testClass, searchStrategy);
 		return (mergedAnnotations.isPresent(TestPropertySource.class) ?
 				mergeTestPropertySources(mergedAnnotations, searchStrategy) :

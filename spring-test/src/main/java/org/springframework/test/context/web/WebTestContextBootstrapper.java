@@ -74,7 +74,7 @@ public class WebTestContextBootstrapper extends DefaultTestContextBootstrapper {
 	}
 
 	private static MergedAnnotation<WebAppConfiguration> getWebAppConfiguration(Class<?> testClass) {
-		return MergedAnnotations.from(testClass, MetaAnnotationUtils.lookUpSearchStrategy(testClass),
+		return MergedAnnotations.from(testClass, MetaAnnotationUtils.getSearchStrategy(testClass),
 				RepeatableContainers.none()).get(WebAppConfiguration.class);
 	}
 

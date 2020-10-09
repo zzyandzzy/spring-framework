@@ -299,11 +299,11 @@ public abstract class MetaAnnotationUtils {
 	 * @return the resolved search strategy
 	 * @since 5.3
 	 */
-	private static SearchStrategy getSearchStrategy(Class<?> clazz) {
+	public static SearchStrategy getSearchStrategy(Class<?> clazz) {
 		return cachedSearchStrategies.get(clazz);
 	}
 
-	public static SearchStrategy lookUpSearchStrategy(Class<?> clazz) {
+	private static SearchStrategy lookUpSearchStrategy(Class<?> clazz) {
 		EnclosingConfiguration enclosingConfiguration =
 			MergedAnnotations.from(clazz, SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES)
 				.stream(NestedTestConfiguration.class)
@@ -505,7 +505,7 @@ public abstract class MetaAnnotationUtils {
 		@SuppressWarnings("unchecked")
 		public Set<T> findAllLocalMergedAnnotations() {
 			Class<T> annotationType = (Class<T>) getAnnotationType();
-			SearchStrategy searchStrategy = lookUpSearchStrategy(getRootDeclaringClass());
+			SearchStrategy searchStrategy = getSearchStrategy(getRootDeclaringClass());
 			return MergedAnnotations.from(getRootDeclaringClass(), searchStrategy , RepeatableContainers.none())
 					.stream(annotationType)
 					.filter(MergedAnnotationPredicates.firstRunOf(MergedAnnotation::getAggregateIndex))

@@ -16,6 +16,7 @@
 
 package org.springframework.test.context;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -24,9 +25,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeanUtils;
-import org.springframework.core.annotation.MergedAnnotations;
-import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
-import org.springframework.core.annotation.RepeatableContainers;
 import org.springframework.lang.Nullable;
 import org.springframework.test.util.MetaAnnotationUtils;
 import org.springframework.test.util.MetaAnnotationUtils.AnnotationDescriptor;
@@ -59,6 +57,8 @@ abstract class BootstrapUtils {
 
 	private static final String WEB_APP_CONFIGURATION_ANNOTATION_CLASS_NAME =
 			"org.springframework.test.context.web.WebAppConfiguration";
+
+	private static final Class<? extends Annotation> webAppConfigurationClass = loadWebAppConfigurationClass();
 
 	private static final Log logger = LogFactory.getLog(BootstrapUtils.class);
 
@@ -180,14 +180,22 @@ abstract class BootstrapUtils {
 	}
 
 	private static Class<?> resolveDefaultTestContextBootstrapper(Class<?> testClass) throws Exception {
-		SearchStrategy searchStrategy = MetaAnnotationUtils.getSearchStrategy(testClass);
-		boolean webApp = MergedAnnotations.from(testClass, searchStrategy, RepeatableContainers.none())
-				.isPresent(WEB_APP_CONFIGURATION_ANNOTATION_CLASS_NAME);
-		ClassLoader classLoader = BootstrapUtils.class.getClassLoader();
-		if (webApp) {
-			return ClassUtils.forName(DEFAULT_WEB_TEST_CONTEXT_BOOTSTRAPPER_CLASS_NAME, classLoader);
+		boolean webApp = (MetaAnnotationUtils.findMergedAnnotation(testClass, webAppConfigurationClass) != null);
+		String bootstrapperClassName = (webApp ? DEFAULT_WEB_TEST_CONTEXT_BOOTSTRAPPER_CLASS_NAME :
+				DEFAULT_TEST_CONTEXT_BOOTSTRAPPER_CLASS_NAME);
+		return ClassUtils.forName(bootstrapperClassName, BootstrapUtils.class.getClassLoader());
+	}
+
+	@SuppressWarnings("unchecked")
+	private static Class<? extends Annotation> loadWebAppConfigurationClass() {
+		try {
+			return (Class<? extends Annotation>) ClassUtils.forName(WEB_APP_CONFIGURATION_ANNOTATION_CLASS_NAME,
+				BootstrapUtils.class.getClassLoader());
 		}
-		return ClassUtils.forName(DEFAULT_TEST_CONTEXT_BOOTSTRAPPER_CLASS_NAME, classLoader);
+		catch (ClassNotFoundException | LinkageError ex) {
+			throw new IllegalStateException(
+				"Failed to load class for @" + WEB_APP_CONFIGURATION_ANNOTATION_CLASS_NAME, ex);
+		}
 	}
 
 }

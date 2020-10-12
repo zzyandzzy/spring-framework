@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.NestedTestConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -91,8 +90,8 @@ class TestPropertySourceNestedTests {
 
 	@Nested
 	@NestedTestConfiguration(INHERIT)
-	@ContextConfiguration(classes = Config.class)
-	@TestPropertySource(properties = "p2 = v2")
+	@TestPropertySource(properties = "p2a = v2a")
+	@TestPropertySource(properties = "p2b = v2b")
 	class InheritedAndExtendedConfigTests {
 
 		@Autowired
@@ -104,7 +103,8 @@ class TestPropertySourceNestedTests {
 			assertThat(env1.getProperty("p1")).isEqualTo("v1");
 			assertThat(env1).isNotSameAs(env2);
 			assertThat(env2.getProperty("p1")).isEqualTo("v1");
-			assertThat(env2.getProperty("p2")).isEqualTo("v2");
+			assertThat(env2.getProperty("p2a")).isEqualTo("v2a");
+			assertThat(env2.getProperty("p2b")).isEqualTo("v2b");
 		}
 
 
@@ -123,7 +123,8 @@ class TestPropertySourceNestedTests {
 				assertThat(env1.getProperty("p1")).isEqualTo("v1");
 				assertThat(env1).isNotSameAs(env2);
 				assertThat(env2.getProperty("p1")).isEqualTo("v1");
-				assertThat(env2.getProperty("p2")).isEqualTo("v2");
+				assertThat(env2.getProperty("p2a")).isEqualTo("v2a");
+				assertThat(env2.getProperty("p2b")).isEqualTo("v2b");
 				assertThat(env2).isNotSameAs(env3);
 				assertThat(env3.getProperty("p1")).isNull();
 				assertThat(env3.getProperty("p2")).isNull();
@@ -145,7 +146,8 @@ class TestPropertySourceNestedTests {
 					assertThat(env1.getProperty("p1")).isEqualTo("v1");
 					assertThat(env1).isNotSameAs(env2);
 					assertThat(env2.getProperty("p1")).isEqualTo("v1");
-					assertThat(env2.getProperty("p2")).isEqualTo("v2");
+					assertThat(env2.getProperty("p2a")).isEqualTo("v2a");
+					assertThat(env2.getProperty("p2b")).isEqualTo("v2b");
 					assertThat(env2).isNotSameAs(env3);
 					assertThat(env3.getProperty("p1")).isNull();
 					assertThat(env3.getProperty("p2")).isNull();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -155,7 +155,8 @@ class TestPropertySourceAttributes {
 	 * @param elements the elements to add to the list
 	 */
 	private void addAll(boolean prepend, List<String> list, String... elements) {
-		list.addAll((prepend ? 0 : list.size()), Arrays.asList(elements));
+		// list.addAll((prepend ? 0 : list.size()), Arrays.asList(elements));
+		list.addAll(Arrays.asList(elements));
 	}
 
 	private String detectDefaultPropertiesFile(MergedAnnotation<TestPropertySource> annotation) {

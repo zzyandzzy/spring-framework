@@ -17,8 +17,6 @@
 package org.springframework.test.util;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -293,65 +291,6 @@ public abstract class MetaAnnotationUtils {
 		}
 
 		return null;
-	}
-
-	@Nullable
-	public static <T extends Annotation> RepeatableAnnotationDescriptor<T> findRepeatableAnnotationDescriptor(
-			Class<?> clazz, Class<T> annotationType) {
-
-		return findRepeatableAnnotationDescriptor(clazz, annotationType, new HashSet<>());
-	}
-
-	private static <T extends Annotation> RepeatableAnnotationDescriptor<T> findRepeatableAnnotationDescriptor(Class<?> clazz,
-			Class<T> annotationType, Set<T> visited) {
-
-		Assert.notNull(annotationType, "Annotation type must not be null");
-		if (clazz == null || Object.class == clazz) {
-			return null;
-		}
-
-		// Declared locally (directly present or meta-present)?
-		T[] annotations = findRepeatableAnnotations(clazz, annotationType);
-		// System.err.println(Arrays.toString(annotations));
-		if (annotations.length > 0) {
-			return new RepeatableAnnotationDescriptor<>(annotationType, clazz, clazz, annotations);
-		}
-
-		RepeatableAnnotationDescriptor<T> descriptor = null;
-
-		// Declared on an interface?
-		for (Class<?> ifc : clazz.getInterfaces()) {
-			descriptor = findRepeatableAnnotationDescriptor(ifc, annotationType, visited);
-			if (descriptor != null) {
-				return new RepeatableAnnotationDescriptor<>(annotationType, clazz, descriptor.getDeclaringClass(),
-					descriptor.getAnnotations());
-			}
-		}
-
-		// Declared on a superclass?
-		descriptor = findRepeatableAnnotationDescriptor(clazz.getSuperclass(), annotationType, visited);
-		if (descriptor != null) {
-			return descriptor;
-		}
-
-		// Declared on an enclosing class of an inner class?
-		if (searchEnclosingClass(clazz)) {
-			descriptor = findRepeatableAnnotationDescriptor(clazz.getEnclosingClass(), annotationType, visited);
-			if (descriptor != null) {
-				return descriptor;
-			}
-		}
-
-		return null;
-	}
-
-	@SuppressWarnings("unchecked")
-	private static <T extends Annotation> T[] findRepeatableAnnotations(Class<?> clazz, Class<T> annotationType) {
-		RepeatableContainers repeatableContainers = RepeatableContainers.of(annotationType, null);
-		return MergedAnnotations.from(clazz, SearchStrategy.DIRECT, repeatableContainers)
-				.stream(annotationType)
-				.collect(MergedAnnotationCollectors.toAnnotationSet())
-				.toArray((T[]) Array.newInstance(annotationType, 0));
 	}
 
 	/**
@@ -690,72 +629,6 @@ public abstract class MetaAnnotationUtils {
 					"findAllLocalMergedAnnotations() is unsupported in UntypedAnnotationDescriptor");
 		}
 
-	}
-
-
-	public static class RepeatableAnnotationDescriptor<T extends Annotation> {
-
-		private final Class<T> annotationType;
-
-		private final Class<?> rootDeclaringClass;
-
-		private final Class<?> declaringClass;
-
-		private final T[] annotations;
-
-
-		public RepeatableAnnotationDescriptor(Class<T> annotationType, Class<?> rootDeclaringClass,
-				Class<?> declaringClass, T[] annotations) {
-
-			Assert.notNull(annotationType, "'annotationType' must not be null");
-			Assert.notNull(rootDeclaringClass, "'rootDeclaringClass' must not be null");
-			Assert.notNull(declaringClass, "'declaringClass' must not be null");
-			Assert.notNull(annotations, "'annotations' array must not be null");
-			Assert.notEmpty(annotations, "'annotations' array must not be empty");
-
-			this.annotationType = annotationType;
-			this.rootDeclaringClass = rootDeclaringClass;
-			this.declaringClass = declaringClass;
-			this.annotations = annotations;
-		}
-
-		public Class<? extends Annotation> getAnnotationType() {
-			return this.annotationType;
-		}
-
-		public Class<?> getRootDeclaringClass() {
-			return this.rootDeclaringClass;
-		}
-
-		public Class<?> getDeclaringClass() {
-			return this.declaringClass;
-		}
-
-		public T[] getAnnotations() {
-			return this.annotations;
-		}
-
-		@Nullable
-		public RepeatableAnnotationDescriptor<T> next() {
-			// Declared on a superclass?
-			RepeatableAnnotationDescriptor<T> descriptor =
-					findRepeatableAnnotationDescriptor(getRootDeclaringClass().getSuperclass(), this.annotationType);
-			// Declared on an enclosing class of an inner class?
-			if (descriptor == null && searchEnclosingClass(getRootDeclaringClass())) {
-				descriptor = findRepeatableAnnotationDescriptor(getRootDeclaringClass().getEnclosingClass(), this.annotationType);
-			}
-			return descriptor;
-		}
-
-		@Override
-		public String toString() {
-			return new ToStringCreator(this)
-					.append("annotationType", this.annotationType)
-					.append("rootDeclaringClass", this.rootDeclaringClass)
-					.append("declaringClass", this.declaringClass)
-					.append("annotation", Arrays.toString(this.annotations))
-					.toString();
-		}
 	}
 
 }

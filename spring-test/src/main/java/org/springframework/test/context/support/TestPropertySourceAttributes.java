@@ -17,7 +17,7 @@
 package org.springframework.test.context.support;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -52,8 +52,6 @@ class TestPropertySourceAttributes {
 	private static final Log logger = LogFactory.getLog(TestPropertySourceAttributes.class);
 
 
-	private final int aggregateIndex;
-
 	private final Class<?> declaringClass;
 
 	private final MergedAnnotation<?> rootAnnotation;
@@ -68,27 +66,11 @@ class TestPropertySourceAttributes {
 
 
 	TestPropertySourceAttributes(MergedAnnotation<TestPropertySource> annotation) {
-		this.aggregateIndex = annotation.getAggregateIndex();
 		this.declaringClass = declaringClass(annotation);
 		this.rootAnnotation = annotation.getRoot();
 		this.inheritLocations = annotation.getBoolean("inheritLocations");
 		this.inheritProperties = annotation.getBoolean("inheritProperties");
 		mergePropertiesAndLocations(annotation);
-	}
-
-
-	/**
-	 * Determine if the annotation represented by this
-	 * {@code TestPropertySourceAttributes} instance can be merged with the
-	 * supplied {@code annotation}.
-	 * <p>This method effectively checks that two annotations are declared at
-	 * the same level in the type hierarchy (i.e., have the same
-	 * {@linkplain MergedAnnotation#getAggregateIndex() aggregate index}).
-	 * @since 5.2
-	 * @see #mergeWith(MergedAnnotation)
-	 */
-	boolean canMergeWith(MergedAnnotation<TestPropertySource> annotation) {
-		return annotation.getAggregateIndex() == this.aggregateIndex;
 	}
 
 	/**
@@ -130,33 +112,13 @@ class TestPropertySourceAttributes {
 	private void mergePropertiesAndLocations(MergedAnnotation<TestPropertySource> annotation) {
 		String[] locations = annotation.getStringArray("locations");
 		String[] properties = annotation.getStringArray("properties");
-		// If the meta-distance is positive, that means the annotation is
-		// meta-present and should therefore have lower priority than directly
-		// present annotations (i.e., it should be prepended to the list instead
-		// of appended). This follows the rule of last-one-wins for overriding
-		// properties.
-		boolean prepend = annotation.getDistance() > 0;
 		if (ObjectUtils.isEmpty(locations) && ObjectUtils.isEmpty(properties)) {
-			addAll(prepend, this.locations, detectDefaultPropertiesFile(annotation));
+			Collections.addAll(this.locations, detectDefaultPropertiesFile(annotation));
 		}
 		else {
-			addAll(prepend, this.locations, locations);
-			addAll(prepend, this.properties, properties);
+			Collections.addAll(this.locations, locations);
+			Collections.addAll(this.properties, properties);
 		}
-	}
-
-	/**
-	 * Add all of the supplied elements to the provided list, honoring the
-	 * {@code prepend} flag.
-	 * <p>If the {@code prepend} flag is {@code false}, the elements will appended
-	 * to the list.
-	 * @param prepend whether the elements should be prepended to the list
-	 * @param list the list to which to add the elements
-	 * @param elements the elements to add to the list
-	 */
-	private void addAll(boolean prepend, List<String> list, String... elements) {
-		// list.addAll((prepend ? 0 : list.size()), Arrays.asList(elements));
-		list.addAll(Arrays.asList(elements));
 	}
 
 	private String detectDefaultPropertiesFile(MergedAnnotation<TestPropertySource> annotation) {

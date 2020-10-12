@@ -18,32 +18,26 @@ package org.springframework.test.util;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import org.springframework.core.annotation.AliasFor;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.util.MetaAnnotationUtils.AnnotationDescriptor;
-import org.springframework.test.util.MetaAnnotationUtils.RepeatableAnnotationDescriptor;
 import org.springframework.test.util.MetaAnnotationUtils.UntypedAnnotationDescriptor;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.util.MetaAnnotationUtils.findAnnotationDescriptor;
 import static org.springframework.test.util.MetaAnnotationUtils.findAnnotationDescriptorForTypes;
-import static org.springframework.test.util.MetaAnnotationUtils.findRepeatableAnnotationDescriptor;
 
 /**
  * Unit tests for {@link MetaAnnotationUtils}.
@@ -487,129 +481,6 @@ class MetaAnnotationUtilsTests {
 
 	}
 
-	@Nested
-	@DisplayName("findRepeatableAnnotationDescriptor() tests")
-	class RepeatableAnnotationTests {
-
-		@Test
-		void findRepeatableAnnotationDescriptorOnNonAnnotatedTypes() {
-			assertThat(findRepeatableAnnotationDescriptor(NonAnnotatedInterface.class, MyPropertySource.class)).isNull();
-			assertThat(findRepeatableAnnotationDescriptor(NonAnnotatedClass.class, MyPropertySource.class)).isNull();
-		}
-
-		@Test
-		void findRepeatableAnnotationDescriptorWhenDirectlyPresentOnce() {
-			Class<?> clazz = DirectlyPresentRepeatableOnceClass.class;
-			RepeatableAnnotationDescriptor<MyPropertySource> descriptor =
-					findRepeatableAnnotationDescriptor(clazz, MyPropertySource.class);
-			assertMyPropertySourceDescriptor(clazz, descriptor);
-			assertThat(descriptor.getAnnotations()).hasSize(1);
-			assertMyPropertySource1(descriptor.getAnnotations()[0]);
-		}
-
-		@Test
-		void findRepeatableAnnotationDescriptorWhenMetaPresentOnce() {
-			Class<?> clazz = MetaPresentRepeatableOnceClass.class;
-			RepeatableAnnotationDescriptor<MyPropertySource> descriptor =
-					findRepeatableAnnotationDescriptor(clazz, MyPropertySource.class);
-			assertMyPropertySourceDescriptor(clazz, descriptor);
-			assertThat(descriptor.getAnnotations()).hasSize(1);
-			assertMyPropertySource1(descriptor.getAnnotations()[0]);
-		}
-
-		@Test
-		void findRepeatableAnnotationDescriptorWhenPresentOnceOnInterface() {
-			Class<?> clazz = RepeatablePresentOnInterface.class;
-			RepeatableAnnotationDescriptor<MyPropertySource> descriptor =
-					findRepeatableAnnotationDescriptor(clazz, MyPropertySource.class);
-			assertMyPropertySourceDescriptor(clazz, DirectlyPresentRepeatableInterface.class, descriptor);
-			assertThat(descriptor.getAnnotations()).hasSize(1);
-			assertMyPropertySource1(descriptor.getAnnotations()[0]);
-		}
-
-		@Test
-		void findRepeatableAnnotationDescriptorWhenDirectlyPresentTwice() {
-			Class<?> clazz = DirectlyPresentRepeatableTwiceClass.class;
-			RepeatableAnnotationDescriptor<MyPropertySource> descriptor =
-					findRepeatableAnnotationDescriptor(clazz, MyPropertySource.class);
-			assertMyPropertySourceDescriptor(clazz, descriptor);
-			assertThat(descriptor.getAnnotations()).hasSize(2);
-			assertMyPropertySource1(descriptor.getAnnotations()[0]);
-			assertMyPropertySource2(descriptor.getAnnotations()[1]);
-		}
-
-		@Test
-		void findRepeatableAnnotationDescriptorWhenMetaPresentTwice() {
-			Class<?> clazz = MetaPresentRepeatableTwiceClass.class;
-			RepeatableAnnotationDescriptor<MyPropertySource> descriptor =
-					findRepeatableAnnotationDescriptor(clazz, MyPropertySource.class);
-			assertMyPropertySourceDescriptor(clazz, descriptor);
-			assertThat(descriptor.getAnnotations()).hasSize(2);
-			assertMyPropertySource1(descriptor.getAnnotations()[0]);
-			assertMyPropertySource2(descriptor.getAnnotations()[1]);
-		}
-
-		@Test
-		void findRepeatableAnnotationDescriptorWhenDirectlyAndMetaPresentTwice() {
-			Class<?> clazz = DirectlyAndMetaPresentRepeatableTwiceClass.class;
-			RepeatableAnnotationDescriptor<MyPropertySource> descriptor =
-					findRepeatableAnnotationDescriptor(clazz, MyPropertySource.class);
-			assertMyPropertySourceDescriptor(clazz, descriptor);
-			assertThat(descriptor.getAnnotations()).hasSize(2);
-			assertMyPropertySource1(descriptor.getAnnotations()[0]);
-			assertMyPropertySource2(descriptor.getAnnotations()[1]);
-		}
-
-		@Test
-		void findRepeatableAnnotationDescriptorWhenIndirectlyPresentTwice() {
-			Class<?> clazz = IndirectlyPresentRepeatableTwiceClass.class;
-			RepeatableAnnotationDescriptor<MyPropertySource> descriptor =
-					findRepeatableAnnotationDescriptor(clazz, MyPropertySource.class);
-			assertMyPropertySourceDescriptor(clazz, descriptor);
-			assertThat(descriptor.getAnnotations()).hasSize(2);
-			assertMyPropertySource1(descriptor.getAnnotations()[0]);
-			assertMyPropertySource2(descriptor.getAnnotations()[1]);
-		}
-
-		@Disabled
-		@Test
-		void findRepeatableAnnotationDescriptorWhenPresentTwiceLocallyAndOnInterface() {
-			Class<?> clazz = RepeatablePresentLocallyAndOnInterface.class;
-			RepeatableAnnotationDescriptor<MyPropertySource> descriptor =
-					findRepeatableAnnotationDescriptor(clazz, MyPropertySource.class);
-			assertMyPropertySourceDescriptor(clazz, descriptor);
-			assertThat(descriptor.getAnnotations()).hasSize(1);
-			assertMyPropertySource1(descriptor.getAnnotations()[1]);
-			assertMyPropertySource2(descriptor.getAnnotations()[0]);
-		}
-
-		private void assertMyPropertySourceDescriptor(Class<?> clazz,
-				RepeatableAnnotationDescriptor<MyPropertySource> descriptor) {
-			assertMyPropertySourceDescriptor(clazz, clazz, descriptor);
-		}
-
-		private void assertMyPropertySourceDescriptor(Class<?> clazz, Class<?> declaringClass,
-				RepeatableAnnotationDescriptor<MyPropertySource> descriptor) {
-			assertThat(descriptor).isNotNull();
-			assertThat(descriptor.getAnnotationType()).as("annotation type").isEqualTo(MyPropertySource.class);
-			assertThat(descriptor.getRootDeclaringClass()).as("root declaring class").isEqualTo(clazz);
-			assertThat(descriptor.getDeclaringClass()).as("declaring class").isEqualTo(declaringClass);
-		}
-
-		private void assertMyPropertySource1(MyPropertySource myPropertySource) {
-			assertThat(myPropertySource.locations()).containsExactly("test1.properties");
-			assertThat(myPropertySource.value()).containsExactly("test1.properties");
-			assertThat(myPropertySource.properties()).containsExactly("p1 = v1");
-		}
-
-		private void assertMyPropertySource2(MyPropertySource myPropertySource) {
-			assertThat(myPropertySource.locations()).containsExactly("test2.properties");
-			assertThat(myPropertySource.value()).containsExactly("test2.properties");
-			assertThat(myPropertySource.properties()).containsExactly("p2 = v2");
-		}
-
-	}
-
 	// -------------------------------------------------------------------------
 
 	@Component(value = "meta1")
@@ -764,70 +635,5 @@ class MetaAnnotationUtilsTests {
 	@MetaConfig(classes = String.class)
 	static class MetaAnnotatedAndSuperAnnotatedContextConfigClass extends AnnotatedContextConfigClass {
 	}
-
-	@Target(ElementType.TYPE)
-	@Retention(RetentionPolicy.RUNTIME)
-	@Inherited
-	@interface MyPropertySources {
-
-		MyPropertySource[] value();
-	}
-
-	@Target(ElementType.TYPE)
-	@Retention(RetentionPolicy.RUNTIME)
-	@Inherited
-	@Repeatable(MyPropertySources.class)
-	@interface MyPropertySource {
-
-		@AliasFor("locations")
-		String[] value() default {};
-
-		@AliasFor("value")
-		String[] locations() default {};
-
-		String[] properties() default {};
-	}
-
-	@Target(ElementType.TYPE)
-	@Retention(RetentionPolicy.RUNTIME)
-	@MyPropertySource(locations = "test1.properties", properties = "p1 = v1")
-	@interface MetaPropertySource1 {}
-
-	@Target(ElementType.TYPE)
-	@Retention(RetentionPolicy.RUNTIME)
-	@MyPropertySource(locations = "test2.properties", properties = "p2 = v2")
-	@interface MetaPropertySource2 {}
-
-	@MyPropertySource(locations = "test1.properties", properties = "p1 = v1")
-	static class DirectlyPresentRepeatableOnceClass {}
-
-	@MyPropertySource(locations = "test1.properties", properties = "p1 = v1")
-	@MyPropertySource(locations = "test2.properties", properties = "p2 = v2")
-	static class DirectlyPresentRepeatableTwiceClass {}
-
-	@MyPropertySources({
-		@MyPropertySource(locations = "test1.properties", properties = "p1 = v1"),
-		@MyPropertySource(locations = "test2.properties", properties = "p2 = v2")
-	})
-	static class IndirectlyPresentRepeatableTwiceClass {}
-
-	@MetaPropertySource1
-	static class MetaPresentRepeatableOnceClass {}
-
-	@MetaPropertySource1
-	@MetaPropertySource2
-	static class MetaPresentRepeatableTwiceClass {}
-
-	@MyPropertySource(locations = "test1.properties", properties = "p1 = v1")
-	@MetaPropertySource2
-	static class DirectlyAndMetaPresentRepeatableTwiceClass {}
-
-	@MyPropertySource(locations = "test1.properties", properties = "p1 = v1")
-	interface DirectlyPresentRepeatableInterface {}
-
-	static class RepeatablePresentOnInterface implements DirectlyPresentRepeatableInterface {}
-
-	@MyPropertySource(locations = "test2.properties", properties = "p2 = v2")
-	static class RepeatablePresentLocallyAndOnInterface implements DirectlyPresentRepeatableInterface {}
 
 }

@@ -276,7 +276,9 @@ public abstract class TestPropertySourceUtils {
 		return map;
 	}
 
-	private static <T extends Annotation> List<MergedAnnotation<T>> findRepeatableAnnotations(Class<?> clazz, Class<T> annotationType) {
+	private static <T extends Annotation> List<MergedAnnotation<T>> findRepeatableAnnotations(
+			Class<?> clazz, Class<T> annotationType) {
+
 		List<List<MergedAnnotation<T>>> listOfLists = new ArrayList<>();
 		findRepeatableAnnotations(clazz, annotationType, listOfLists, new int[] {0});
 		return listOfLists.stream().flatMap(List::stream).collect(Collectors.toList());

@@ -81,7 +81,7 @@ class TestPropertySourceUtilsTests {
 	}
 
 	@Test
-	@Disabled("Validation for repeated @TestPropertySource annotations is currently not working")
+	@Disabled("Validation for repeated @TestPropertySource annotations has been removed")
 	void repeatedTestPropertySourcesWithConflictingInheritLocationsFlags() {
 		assertThatIllegalArgumentException()
 			.isThrownBy(() -> buildMergedTestPropertySources(RepeatedPropertySourcesWithConflictingInheritLocationsFlags.class))
@@ -91,7 +91,7 @@ class TestPropertySourceUtilsTests {
 	}
 
 	@Test
-	@Disabled("Validation for repeated @TestPropertySource annotations is currently not working")
+	@Disabled("Validation for repeated @TestPropertySource annotations has been removed")
 	void repeatedTestPropertySourcesWithConflictingInheritPropertiesFlags() {
 		assertThatIllegalArgumentException()
 			.isThrownBy(() -> buildMergedTestPropertySources(RepeatedPropertySourcesWithConflictingInheritPropertiesFlags.class))

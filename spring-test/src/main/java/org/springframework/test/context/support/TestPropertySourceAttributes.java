@@ -25,7 +25,6 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.core.annotation.MergedAnnotation;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.log.LogMessage;
 import org.springframework.core.style.ToStringCreator;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.util.Assert;
@@ -54,8 +53,6 @@ class TestPropertySourceAttributes {
 
 	private final Class<?> declaringClass;
 
-	private final MergedAnnotation<?> rootAnnotation;
-
 	private final List<String> locations = new ArrayList<>();
 
 	private final boolean inheritLocations;
@@ -67,46 +64,9 @@ class TestPropertySourceAttributes {
 
 	TestPropertySourceAttributes(MergedAnnotation<TestPropertySource> annotation) {
 		this.declaringClass = declaringClass(annotation);
-		this.rootAnnotation = annotation.getRoot();
 		this.inheritLocations = annotation.getBoolean("inheritLocations");
 		this.inheritProperties = annotation.getBoolean("inheritProperties");
 		mergePropertiesAndLocations(annotation);
-	}
-
-	/**
-	 * Merge this {@code TestPropertySourceAttributes} instance with the
-	 * supplied {@code annotation}, asserting that the two sets of test property
-	 * source attributes have identical values for the
-	 * {@link TestPropertySource#inheritLocations} and
-	 * {@link TestPropertySource#inheritProperties} flags and that the two
-	 * underlying annotations were declared on the same class.
-	 * <p>This method should only be invoked if {@link #canMergeWith(MergedAnnotation)}
-	 * returns {@code true}.
-	 * @since 5.2
-	 * @see #canMergeWith(MergedAnnotation)
-	 */
-	void mergeWith(MergedAnnotation<TestPropertySource> annotation) {
-		Class<?> source = declaringClass(annotation);
-		Assert.state(source == this.declaringClass,
-				() -> "Detected @TestPropertySource declarations within an aggregate index "
-						+ "with different sources: " + this.declaringClass.getName() + " and "
-						+ source.getName());
-		logger.trace(LogMessage.format("Retrieved %s for declaring class [%s].",
-				annotation, this.declaringClass.getName()));
-		assertSameBooleanAttribute(this.inheritLocations, annotation, "inheritLocations");
-		assertSameBooleanAttribute(this.inheritProperties, annotation, "inheritProperties");
-		mergePropertiesAndLocations(annotation);
-	}
-
-	private void assertSameBooleanAttribute(boolean expected, MergedAnnotation<TestPropertySource> annotation,
-			String attribute) {
-
-		Assert.isTrue(expected == annotation.getBoolean(attribute), () -> String.format(
-				"@%s on %s and @%s on %s must declare the same value for '%s' as other " +
-				"directly present or meta-present @TestPropertySource annotations",
-			this.rootAnnotation.getType().getSimpleName(), this.declaringClass.getSimpleName(),
-			annotation.getRoot().getType().getSimpleName(), declaringClass(annotation).getSimpleName(),
-			attribute));
 	}
 
 	private void mergePropertiesAndLocations(MergedAnnotation<TestPropertySource> annotation) {

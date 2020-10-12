@@ -33,8 +33,13 @@ import java.lang.annotation.Target;
  * not propagate to inner test classes (see {@link EnclosingConfiguration#OVERRIDE}).
  * Consequently, inner test classes will have to declare their own Spring test
  * configuration annotations. If you wish for an inner test class to inherit
- * configuration from its enclosing class, annotate the enclosing class with
- * {@code @NestedTestConfiguration(EnclosingConfiguration.INHERIT)}.
+ * configuration from its enclosing class, annotate either the inner test class
+ * or the enclosing class with
+ * {@code @NestedTestConfiguration(EnclosingConfiguration.INHERIT)}. Note that
+ * a {@code @NestedTestConfiguration(...)} declaration is inherited within the
+ * superclass hierarchy as well as within the enclosing class hierarchy. Thus,
+ * there is no need to redeclare the annotation unless you wish to switch the
+ * mode.
  *
  * <p>This annotation may be used as a <em>meta-annotation</em> to create custom
  * <em>composed annotations</em>.

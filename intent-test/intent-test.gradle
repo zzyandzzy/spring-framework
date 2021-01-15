@@ -1,0 +1,9 @@
+description = "Intent Test"
+
+dependencies {
+    compile(project(":spring-aop"))
+    compile(project(":spring-beans"))
+    compile(project(":spring-context"))
+    compile(project(":spring-core"))
+    compile(project(":spring-jdbc"))
+}

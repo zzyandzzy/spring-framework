@@ -6,4 +6,5 @@ dependencies {
     compile(project(":spring-context"))
     compile(project(":spring-core"))
     compile(project(":spring-jdbc"))
+    compile(project(":spring-jcl"))
 }

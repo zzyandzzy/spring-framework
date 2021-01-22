@@ -16,6 +16,10 @@ public class Application {
 
 	public static void main(String[] args) {
 		ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("ABCircularReference.xml");
+		// b对象单例
+		B b = (B) applicationContext.getBean("b");
+		// a对象原型，原型每获取一遍就实例化一次
+		A a = (A) applicationContext.getBean("a");
 		applicationContext.close();
 //		ApplicationContext applicationContext = new AnnotationConfigApplicationContext(Application.class);
 	}

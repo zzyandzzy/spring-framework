@@ -1,5 +1,7 @@
 package zzy.cool;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.stereotype.Component;
 
 /**
@@ -9,6 +11,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class B {
+	private static final Log logger = LogFactory.getLog(Application.class);
 	private A a;
 
 	public A getA() {
@@ -17,5 +20,9 @@ public class B {
 
 	public void setA(A a) {
 		this.a = a;
+	}
+
+	public void destroy() {
+		logger.info("Bean B destroy.");
 	}
 }

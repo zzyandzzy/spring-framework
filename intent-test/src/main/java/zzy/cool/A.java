@@ -1,5 +1,7 @@
 package zzy.cool;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.stereotype.Component;
 
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class A implements DisposableBean {
+	private static final Log logger = LogFactory.getLog(Application.class);
 	private B b;
 
 	public B getB() {
@@ -20,8 +23,13 @@ public class A implements DisposableBean {
 		this.b = b;
 	}
 
+	public void init() {
+		logger.info("Bean A init.");
+	}
+
 	@Override
 	public void destroy() throws Exception {
 		this.b = null;
+		logger.info("Bean A destroy.");
 	}
 }

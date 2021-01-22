@@ -2,11 +2,11 @@
 <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN 2.0//EN"
 		"https://www.springframework.org/dtd/spring-beans-2.0.dtd">
 <beans>
-	<bean id="a" class="zzy.cool.A">
+	<bean id="a" class="zzy.cool.A" init-method="init" scope="prototype">
 		<property name="b" ref="b"/>
 	</bean>
 
-	<bean id="b" class="zzy.cool.B">
+	<bean id="b" class="zzy.cool.B" destroy-method="destroy">
 		<property name="a" ref="a"/>
 	</bean>
 </beans>
